@@ -12,23 +12,54 @@ import java.io.InputStreamReader;
 
 public enum Token {
     Ident,
-    Num,
+    IntegerLiteral,
+    FloatLiteral,
+    StringLiteral,
     If,
     Else,
     Public,
     Private,
     Class,
+    Extends,
+    Static,
+    Return,
+    Null,
+    True,
+    False,
+    This,
+    New,
+    Boolean,
+    String,
+    Float,
+    Int,
+    While,
+    Break,
+    Continue,
+    Switch,
+    Case,
+    Default,
+    Length,
+    SystemOutPrintln,
     DoubleEquals,
     Equals,
     Plus,
     Star,
-    SemiCollon,
-    LBracket,
-    RBracket,
+    Semicolon,
+    LCurlyB,
+    RCurlyB,
     Dot,
     Comma,
     LPar,
     RPar,
+    LSquareB,
+    RSquareB,
+    Colon,
+    Ampersand,
+    Pipe,
+    Less,
+    Minus,
+    Solidus,
+    Exclamation,
 }
 
 /**
@@ -93,21 +124,52 @@ else                        {return Token.Else;}
 public                      {return Token.Public;}
 private                     {return Token.Private;}
 class                       {return Token.Class;}
+extends                     {return Token.Extends;}
+static                      {return Token.Static;}
+return                      {return Token.Return;}
+null                        {return Token.Null;}
+true                        {return Token.True;}
+false                       {return Token.False;}
+this                        {return Token.This;}
+new                         {return Token.New;}
+boolean                     {return Token.Boolean;}
+String                      {return Token.String;}
+float                       {return Token.Float;}
+int                         {return Token.Int;}
+while                       {return Token.While;}
+break                       {return Token.Break;}
+continue                    {return Token.Continue;}
+switch                      {return Token.Switch;}
+case                        {return Token.Case;}
+default                     {return Token.Default;}
+length                      {return Token.Length;}
+System.out.println          {return Token.SystemOutPrintln;}
 
 {LETTER}({LETTER}|{DIGIT})* {return Token.Ident;}
-{DIGIT}+                    {return Token.Num;}
+{DIGIT}+                    {return Token.IntegerLiteral;}
+{DIGIT}+\.\{DIGIT}+         {return Token.FloatLiteral;}
+{LETTER}+                   {return Token.StringLiteral}
 
+"=="                        {return Token.DoubleEquals;}
 "="                         {return Token.Equals;}
 "+"                         {return Token.Plus;}
 "*"                         {return Token.Star;}
-";"                         {return Token.SemiCollon;}
-"{"                         {return Token.LBracket;}
-"}"                         {return Token.RBracket;}
+";"                         {return Token.Semicolon;}
+"{"                         {return Token.LCurlyB;}
+"}"                         {return Token.RCurlyB;}
 "."                         {return Token.Dot;}
 ","                         {return Token.Comma;}
 "("                         {return Token.LPar;}
 ")"                         {return Token.RPar;}
-"=="                        {return Token.DoubleEquals;}
+"["                         {return Token.LSquareB;}
+"]"                         {return Token.RSquareB;}
+":"                         {return Token.Colon;}
+"&"                         {return Token.Ampersand;}
+"|"                         {return Token.Pipe;}
+"<"                         {return Token.Less;}
+"-"                         {return Token.Minus;}
+"/"                         {return Token.Solidus;}
+"!"                         {return Token.Exclamation;}
 {WHITESPACE}+               { }
 {LineTerminator}            { }
 .                           {System.out.println(yyline + 1 + ": INVALID CHARACTER: " + yytext());}
