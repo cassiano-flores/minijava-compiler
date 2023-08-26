@@ -18,7 +18,6 @@ public enum Token {
     If,
     Else,
     Public,
-    Private,
     Class,
     Extends,
     Static,
@@ -40,7 +39,6 @@ public enum Token {
     Default,
     Length,
     SystemOutPrintln,
-    DoubleEquals,
     Equals,
     Plus,
     Star,
@@ -122,7 +120,6 @@ LineTerminator = \r|\n|\r\n
 if                          {return Token.If;}
 else                        {return Token.Else;}
 public                      {return Token.Public;}
-private                     {return Token.Private;}
 class                       {return Token.Class;}
 extends                     {return Token.Extends;}
 static                      {return Token.Static;}
@@ -150,7 +147,6 @@ System.out.println          {return Token.SystemOutPrintln;}
 {DIGIT}+\.\{DIGIT}+         {return Token.FloatLiteral;}
 {LETTER}+                   {return Token.StringLiteral}
 
-"=="                        {return Token.DoubleEquals;}
 "="                         {return Token.Equals;}
 "+"                         {return Token.Plus;}
 "*"                         {return Token.Star;}
