@@ -126,7 +126,7 @@ int                         {return Token.Int;}
 while                       {return Token.While;}
 continue                    {return Token.Continue;}
 length                      {return Token.Length;}
-System.out.println          {return Token.SystemOutPrintln;}
+"System.out.println"        {return Token.SystemOutPrintln;}
 void                        {return Token.Void;}
 main                        {return Token.Main;}
 
@@ -154,7 +154,7 @@ main                        {return Token.Main;}
 "/"                         {return Token.FSlash;}
 "!"                         {return Token.Exclamation;}
 "//".*                      { /* Comments are ignored */ }
-"/*"[^"*/"]*"*/"             { /* Comments are ignored */ }
+"/*"[^"*/"]*"*/"            { /* Comments are ignored */ }
 {WHITESPACE}+               { }
 {LineTerminator}            { }
 .                           {System.err.println(yyline + 1 + ": INVALID CHARACTER: " + yytext());}
