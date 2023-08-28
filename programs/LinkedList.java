@@ -26,10 +26,11 @@ class Element {
     }
 
     public boolean GetMarried(){
+	/* AHOY */ /* AHOY AGAIN */
 	return Married ;
     }
 
-    // This method returns true if the object "other"
+    // This method returns true if the object "other" and "hi" and "\"aho\""
     // has the same values for age, salary and 
     public boolean Equal(Element other){
 	boolean ret_val ;

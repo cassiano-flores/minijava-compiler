@@ -11,9 +11,10 @@ import java.io.InputStreamReader;
 %{
 
 public enum Token {
+    Void,
+	Main,
     Ident,
     IntegerLiteral,
-    FloatLiteral,
     StringLiteral,
     If,
     Else,
@@ -22,21 +23,15 @@ public enum Token {
     Extends,
     Static,
     Return,
-    Null,
     True,
     False,
     This,
     New,
     Boolean,
     String,
-    Float,
     Int,
     While,
-    Break,
     Continue,
-    Switch,
-    Case,
-    Default,
     Length,
     SystemOutPrintln,
     Equals,
@@ -51,12 +46,10 @@ public enum Token {
     RPar,
     LSquareB,
     RSquareB,
-    Colon,
-    Ampersand,
-    Pipe,
+    And,
     Less,
     Minus,
-    Solidus,
+    FSlash,
     Exclamation,
 }
 
@@ -110,7 +103,6 @@ public static void main(String argv[]) {
 %}
 
 DIGIT=        [0-9]
-LETTER=        [a-zA-Z]
 WHITESPACE=    [ \t]
 LineTerminator = \r|\n|\r\n
 
@@ -124,28 +116,25 @@ class                       {return Token.Class;}
 extends                     {return Token.Extends;}
 static                      {return Token.Static;}
 return                      {return Token.Return;}
-null                        {return Token.Null;}
 true                        {return Token.True;}
 false                       {return Token.False;}
 this                        {return Token.This;}
 new                         {return Token.New;}
 boolean                     {return Token.Boolean;}
 String                      {return Token.String;}
-float                       {return Token.Float;}
 int                         {return Token.Int;}
 while                       {return Token.While;}
-break                       {return Token.Break;}
 continue                    {return Token.Continue;}
-switch                      {return Token.Switch;}
-case                        {return Token.Case;}
-default                     {return Token.Default;}
 length                      {return Token.Length;}
 System.out.println          {return Token.SystemOutPrintln;}
+void                        {return Token.Void;}
+main                        {return Token.Main;}
 
-{LETTER}({LETTER}|{DIGIT})* {return Token.Ident;}
+[a-zA-Z]([a-zA-Z]|[0-9]|_)* {return Token.Ident;}
 {DIGIT}+                    {return Token.IntegerLiteral;}
-{DIGIT}+\.\{DIGIT}+         {return Token.FloatLiteral;}
-{LETTER}+                   {return Token.StringLiteral}
+
+// Below: we need to first escape the '\', then the '"', so we end up with '\\\"'
+\"(\\\"|[^\"])*\"           {return Token.StringLiteral;}
 
 "="                         {return Token.Equals;}
 "+"                         {return Token.Plus;}
@@ -159,13 +148,13 @@ System.out.println          {return Token.SystemOutPrintln;}
 ")"                         {return Token.RPar;}
 "["                         {return Token.LSquareB;}
 "]"                         {return Token.RSquareB;}
-":"                         {return Token.Colon;}
-"&"                         {return Token.Ampersand;}
-"|"                         {return Token.Pipe;}
+"&&"                        {return Token.And;}
 "<"                         {return Token.Less;}
 "-"                         {return Token.Minus;}
-"/"                         {return Token.Solidus;}
+"/"                         {return Token.FSlash;}
 "!"                         {return Token.Exclamation;}
+"//".*                      { /* Comments are ignored */ }
+"/*"[^"*/"]*"*/"             { /* Comments are ignored */ }
 {WHITESPACE}+               { }
 {LineTerminator}            { }
-.                           {System.out.println(yyline + 1 + ": INVALID CHARACTER: " + yytext());}
+.                           {System.err.println(yyline + 1 + ": INVALID CHARACTER: " + yytext());}
