@@ -53,6 +53,56 @@ public enum Token {
     Exclamation,
 }
 
+MiniJavaLexer scanner;
+private static Token latoken;
+
+public static void verifica(Token expected) {
+	if (expected == latoken)
+		latoken = scanner.yylex();
+	else {
+		System.err.println("Expected token: " + expected + ", found: ", + latoken);
+	}
+}
+
+public static void goal() {
+	mainClass();
+}
+
+public static void mainClass() {
+
+}
+
+public static void classDeclaration() {
+
+}
+
+public static void varDeclaration() {
+
+}
+
+public static void methodDeclaration() {
+	verifica(Token.Public);
+	type();
+	identifier();
+	verifica(Token.LPar);
+}
+
+public static void type() {
+
+}
+
+public static void identifier() {
+
+}
+
+public static void statement() {
+
+}
+
+public static void expression() {
+
+}
+
 /**
 * Runs the scanner on input files.
 *
@@ -63,13 +113,16 @@ public enum Token {
 *               the scanner on.
 */
 public static void main(String argv[]) {
-    MiniJavaLexer scanner;
+	scanner = null;
     if (argv.length == 0) {
         try {
             // scanner = new MiniJavaLexer( System.in );
             scanner = new MiniJavaLexer( new InputStreamReader(System.in) );
-            while ( !scanner.zzAtEOF )
-                System.out.printf("TOKEN: %-16s <%s>\n", scanner.yylex(), scanner.yytext());
+
+			latoken = scanner.yylex();
+			goal();
+            if ( !scanner.zzAtEOF )
+                System.err.println("ERROR!");
           }
           catch (Exception e) {
             System.out.println("Unexpected exception:");
@@ -78,11 +131,12 @@ public static void main(String argv[]) {
     }
     else {
         for (int i = 0; i < argv.length; i++) {
-            scanner = null;
             try {
                 scanner = new MiniJavaLexer( new java.io.FileReader(argv[i]) );
-                while ( !scanner.zzAtEOF )
-                    System.out.printf("TOKEN: %-16s <%s>\n", scanner.yylex(), scanner.yytext());
+				latoken = scanner.yylex();
+				goal();
+				if ( !scanner.zzAtEOF )
+					System.err.println("ERROR!");
             }
             catch (java.io.FileNotFoundException e) {
                 System.out.println("File not found : \"" + argv[i] + "\"");
