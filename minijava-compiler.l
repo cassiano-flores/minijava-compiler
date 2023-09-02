@@ -56,7 +56,11 @@ public enum Token {
 MiniJavaLexer scanner;
 private static Token latoken;
 
-public static void verifica(Token expected) {
+public static void error(String methodName) {
+    System.err.println("Invalid " + methodName + " declaration");
+}
+
+public static void verify(Token expected) {
 	if (expected == latoken)
 		latoken = scanner.yylex();
 	else {
@@ -64,43 +68,280 @@ public static void verifica(Token expected) {
 	}
 }
 
+public static boolean verifyType(Token token) {
+    return ((token == Token.Int)     ||
+            (token == Token.Boolean) ||
+            (token == Token.Ident));
+}
+
+public static boolean verifyStatement(Token token) {
+    return ((token == Token.LCurlyB)          ||
+            (token == Token.If)               ||
+            (token == Token.While)            ||
+            (token == Token.SystemOutPrintln) ||
+            (token == Token.Ident));
+}
+
+public static boolean verifyExpression(Token token) {
+    return ((token == Token.IntegerLiteral) ||
+            (token == Token.True)           ||
+            (token == Token.False)          ||
+            (token == Token.Ident)          ||
+            (token == Token.This)           ||
+            (token == Token.New)            ||
+            (token == Token.Exclamation)    ||
+            (token == Token.LPar));
+}
+
 public static void goal() {
 	mainClass();
+    while (latoken == Token.Class) {
+        classDeclaration();
+    }
 }
 
 public static void mainClass() {
-
+    verify(Token.Class);
+    identifier();
+    verify(Token.LCurlyB);
+    verify(Token.Public);
+    verify(Token.Static);
+    verify(Token.Void);
+    verify(Token.Main);
+    verify(Token.LPar);
+    verify(Token.String);
+    verify(Token.LSquareB);
+    verify(Token.RSquareB);
+    identifier();
+    verify(Token.RPar);
+    verify(Token.LCurlyB);
+    statement();
+    verify(Token.RCurlyB);
+    verify(Token.RCurlyB);
 }
 
 public static void classDeclaration() {
-
+    verify(Token.Class);
+    identifier();
+    if (latoken == Token.Extends) {
+        verify(Token.Extends);
+        identifier();
+    }
+    verify(Token.LCurlyB);
+    while (verifyType(latoken)) {
+        varDeclaration();
+    }
+    while (latoken == Token.Public) {
+        methodDeclaration();
+    }
+    verify(Token.RCurlyB);
 }
 
 public static void varDeclaration() {
-
+    type();
+    identifier();
+    verify(Token.Semicolon);
 }
 
 public static void methodDeclaration() {
-	verifica(Token.Public);
+	verify(Token.Public);
 	type();
 	identifier();
-	verifica(Token.LPar);
+	verify(Token.LPar);
+    if (verifyType(latoken)) {
+        type();
+        identifier();
+        while (latoken == Token.Comma) {
+            type();
+            identifier();
+        }
+    }
+    verify(Token.RPar);
+    verify(Token.LCurlyB);
+    while (verifyType(latoken)) {
+        varDeclaration();
+    }
+    while (latoken == verifyStatement(latoken)) {
+        statement();
+    }
+    verify(Token.Return);
+    expression();
+    verify(Token.Semicolon);
+    verify(Token.RCurlyB);
 }
 
 public static void type() {
-
-}
-
-public static void identifier() {
-
+    switch (latoken) {
+        case Token.Int:
+            verify(Token.Int);
+            if (latoken == Token.LSquareB) {
+                verify(Token.LSquareB);
+                verify(Token.RSquareB);
+            }
+            break;
+        case Token.Boolean:
+            verify(Token.Boolean);
+            break;
+        case Token.Ident:
+            identifier();
+            break;
+        default:
+            error("type");
+    }
 }
 
 public static void statement() {
-
+    switch (latoken) {
+        case Token.LCurlyB:
+            verify(Token.LCurlyB);
+            while (latoken != Token.RCurlyB) {
+                statement();
+            }
+            verify(Token.RCurlyB);
+            break;
+        case Token.If:
+            verify(Token.If);
+            verify(Token.LPar);
+            expression();
+            verify(Token.RPar);
+            statement();
+            verify(Token.Else);
+            statement();
+            break;
+        case Token.While:
+            verify(Token.While);
+            verify(Token.LPar);
+            expression();
+            verify(Token.RPar);
+            statement();
+            break;
+        case Token.SystemOutPrintln:
+            verify(Token.SystemOutPrintln);
+            verify(Token.LPar);
+            expression();
+            verify(Token.RPar);
+            verify(Token.Semicolon);
+            break;
+        case Token.Ident:
+            identifier();
+            if (latoken == Token.Equals) {
+                verify(Token.Equals);
+                expression();
+                verify(Token.Semicolon);
+            } else if (latoken == Token.LSquareB) {
+                verify(Token.LSquareB);
+                expression();
+                verify(Token.RSquareB);
+                verify(Token.Equals);
+                expression();
+                verify(Token.Semicolon);
+            } else {
+                error("identifier");
+            }
+            break;
+        default:
+           error("statement");
+    }
 }
 
 public static void expression() {
+    switch (latoken) {
+        case Token.And:
+        case Token.Less:
+        case Token.Plus:
+        case Token.Minus:
+        case Token.Star:
+            switch (latoken) {
+                case Token.And:
+                    verify(Token.And);
+                    break;
+                case Token.Less:
+                    verify(Token.And);
+                    break;
+                case Token.Plus:
+                    verify(Token.And);
+                    break;
+                case Token.Minus:
+                    verify(Token.And);
+                    break;
+                case Token.Star:
+                    verify(Token.And);
+                    break;
+                default:
+                    error("binary operation");
+            }
+            expression();
+            break;
+        case Token.LSquareB:
+            verify(Token.LSquareB);
+            expression();
+            verify(Token.RSquareB);
+            break;
+        case Token.Dot:
+            verify(Token.Dot);
+            if (latoken == Token.Length) {
+                verify(Token.Length);
+            } else if (latoken == Token.Ident) {
+                identifier();
+                verify(Token.LPar);
+                if (verifyExpression(latoken)) {
+                    expression();
+                    while (latoken == Token.Comma) {
+                        verify(Token.Comma);
+                        expression();
+                    }
+                }
+                verify(Token.RPar);
+            } else {
+                error("expression parameters");
+            }
+            break;
+        case Token.IntegerLiteral:
+            verify(Token.IntegerLiteral);
+            break;
+        case Token.True:
+            verify(Token.True);
+            break;
+        case Token.False:
+            verify(Token.False);
+            break;
+        case Token.Ident:
+            identifier();
+            break;
+        case Token.This:
+            verify(Token.This);
+            break;
+        case Token.New:
+            verify(Token.New);
+            if (latoken == Token.Int) {
+                verify(Token.Int);
+                verify(Token.LSquareB);
+                expression();
+                verify(Token.RSquareB);
+            } else if (latoken == Token.Ident) {
+                identifier();
+                verify(Token.LPar);
+                verify(Token.RPar);
+            } else {
+                error("new");
+            }
+            break;
+        case Token.Exclamation:
+            verify(Token.Exclamation);
+            expression();
+            break;
+        case Token.LPar:
+            verify(Token.LPar);
+            expression();
+            verify(Token.RPar);
+            break;
+        default:
+            error("expression");
+    }
+}
 
+public static void identifier() {
+    verify(Token.Ident);
 }
 
 /**
