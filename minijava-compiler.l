@@ -53,18 +53,18 @@ public enum Token {
     Exclamation,
 }
 
-MiniJavaLexer scanner;
+static MiniJavaLexer scanner;
 private static Token latoken;
 
-public static void error(String methodName) {
-    System.err.println("Invalid " + methodName + " declaration");
+public static void error(String msg) {
+    System.err.println("Invalid " + msg + " declaration");
 }
 
 public static void verify(Token expected) {
 	if (expected == latoken)
 		latoken = scanner.yylex();
 	else {
-		System.err.println("Expected token: " + expected + ", found: ", + latoken);
+		System.err.println("Expected token: " + expected + ", found: " + latoken);
 	}
 }
 
@@ -161,7 +161,7 @@ public static void methodDeclaration() {
     while (verifyType(latoken)) {
         varDeclaration();
     }
-    while (latoken == verifyStatement(latoken)) {
+    while (verifyStatement(latoken)) {
         statement();
     }
     verify(Token.Return);
