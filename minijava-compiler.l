@@ -58,10 +58,6 @@ public enum Token {
 static MiniJavaLexer scanner;
 private static Token latoken;
 
-public static void error(String msg) {
-    System.err.println("Invalid " + msg + " declaration");
-}
-
 public static void verify(Token expected) {
 	System.out.println("verifying " + expected);
 	if (expected == latoken)
@@ -182,7 +178,12 @@ public static void type() {
             identifier();
             break;
         default:
-            error("type");
+		System.err.println("Error at line: " + scanner.yyline + ": expected one of: "
+			+ Token.Int + ", " 
+			+ Token.Boolean + ", " 
+			+ Token.Ident
+			+ ", found: " + latoken);
+		System.exit(1);
     }
 }
 
