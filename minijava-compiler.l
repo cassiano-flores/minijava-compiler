@@ -51,6 +51,8 @@ public enum Token {
     Minus,
     FSlash,
     Exclamation,
+
+	Cmd, // added to simplify the grammar
 }
 
 static MiniJavaLexer scanner;
@@ -61,39 +63,31 @@ public static void error(String msg) {
 }
 
 public static void verify(Token expected) {
+	System.out.println("verifying " + expected);
 	if (expected == latoken)
-		latoken = scanner.yylex();
+        try {
+			latoken = scanner.yylex();
+		} catch (Exception e) {
+			System.err.println("Unexpected error: " + e);
+		}
 	else {
-		System.err.println("Expected token: " + expected + ", found: " + latoken);
+		System.err.println("Error at line: " + scanner.yyline + ": expected token: " + expected + ", found: " + latoken);
+		System.exit(1);
 	}
 }
 
-public static boolean verifyType(Token token) {
+public static boolean nextIsType(Token token) {
     return ((token == Token.Int)     ||
             (token == Token.Boolean) ||
             (token == Token.Ident));
 }
 
-public static boolean verifyStatement(Token token) {
-    return ((token == Token.LCurlyB)          ||
-            (token == Token.If)               ||
-            (token == Token.While)            ||
-            (token == Token.SystemOutPrintln) ||
-            (token == Token.Ident));
-}
-
-public static boolean verifyExpression(Token token) {
-    return ((token == Token.IntegerLiteral) ||
-            (token == Token.True)           ||
-            (token == Token.False)          ||
-            (token == Token.Ident)          ||
-            (token == Token.This)           ||
-            (token == Token.New)            ||
-            (token == Token.Exclamation)    ||
-            (token == Token.LPar));
+public static boolean nextIsCmd(Token token) {
+	return (token == Token.Cmd);
 }
 
 public static void goal() {
+	System.out.println("verifying Goal");
 	mainClass();
     while (latoken == Token.Class) {
         classDeclaration();
@@ -101,6 +95,7 @@ public static void goal() {
 }
 
 public static void mainClass() {
+	System.out.println("verifying MainClass");
     verify(Token.Class);
     identifier();
     verify(Token.LCurlyB);
@@ -121,6 +116,7 @@ public static void mainClass() {
 }
 
 public static void classDeclaration() {
+	System.out.println("verifying ClassDeclaration");
     verify(Token.Class);
     identifier();
     if (latoken == Token.Extends) {
@@ -128,7 +124,7 @@ public static void classDeclaration() {
         identifier();
     }
     verify(Token.LCurlyB);
-    while (verifyType(latoken)) {
+    while (nextIsType(latoken)) {
         varDeclaration();
     }
     while (latoken == Token.Public) {
@@ -138,17 +134,19 @@ public static void classDeclaration() {
 }
 
 public static void varDeclaration() {
+	System.out.println("verifying VarDeclaration");
     type();
     identifier();
     verify(Token.Semicolon);
 }
 
 public static void methodDeclaration() {
+	System.out.println("verifying MethodDeclaration");
 	verify(Token.Public);
 	type();
 	identifier();
 	verify(Token.LPar);
-    if (verifyType(latoken)) {
+    if (nextIsType(latoken)) {
         type();
         identifier();
         while (latoken == Token.Comma) {
@@ -158,10 +156,10 @@ public static void methodDeclaration() {
     }
     verify(Token.RPar);
     verify(Token.LCurlyB);
-    while (verifyType(latoken)) {
+    while (nextIsType(latoken)) {
         varDeclaration();
     }
-    while (verifyStatement(latoken)) {
+    while (nextIsCmd(latoken)) {
         statement();
     }
     verify(Token.Return);
@@ -171,18 +169,16 @@ public static void methodDeclaration() {
 }
 
 public static void type() {
+	System.out.println("verifying Type");
     switch (latoken) {
-        case Token.Int:
-            verify(Token.Int);
-            if (latoken == Token.LSquareB) {
-                verify(Token.LSquareB);
-                verify(Token.RSquareB);
-            }
+        case Int:
+			verify(Token.Int);
+			type_p();
             break;
-        case Token.Boolean:
+        case Boolean:
             verify(Token.Boolean);
             break;
-        case Token.Ident:
+        case Ident:
             identifier();
             break;
         default:
@@ -190,157 +186,26 @@ public static void type() {
     }
 }
 
+public static void type_p() {
+	System.out.println("verifying type_p");
+	if (latoken == Token.LSquareB) {
+		verify(Token.LSquareB);
+		verify(Token.RSquareB);
+	}
+}
+
 public static void statement() {
-    switch (latoken) {
-        case Token.LCurlyB:
-            verify(Token.LCurlyB);
-            while (latoken != Token.RCurlyB) {
-                statement();
-            }
-            verify(Token.RCurlyB);
-            break;
-        case Token.If:
-            verify(Token.If);
-            verify(Token.LPar);
-            expression();
-            verify(Token.RPar);
-            statement();
-            verify(Token.Else);
-            statement();
-            break;
-        case Token.While:
-            verify(Token.While);
-            verify(Token.LPar);
-            expression();
-            verify(Token.RPar);
-            statement();
-            break;
-        case Token.SystemOutPrintln:
-            verify(Token.SystemOutPrintln);
-            verify(Token.LPar);
-            expression();
-            verify(Token.RPar);
-            verify(Token.Semicolon);
-            break;
-        case Token.Ident:
-            identifier();
-            if (latoken == Token.Equals) {
-                verify(Token.Equals);
-                expression();
-                verify(Token.Semicolon);
-            } else if (latoken == Token.LSquareB) {
-                verify(Token.LSquareB);
-                expression();
-                verify(Token.RSquareB);
-                verify(Token.Equals);
-                expression();
-                verify(Token.Semicolon);
-            } else {
-                error("identifier");
-            }
-            break;
-        default:
-           error("statement");
-    }
+	System.out.println("verifying Statement");
+	verify(Token.Cmd);
 }
 
 public static void expression() {
-    switch (latoken) {
-        case Token.And:
-        case Token.Less:
-        case Token.Plus:
-        case Token.Minus:
-        case Token.Star:
-            switch (latoken) {
-                case Token.And:
-                    verify(Token.And);
-                    break;
-                case Token.Less:
-                    verify(Token.And);
-                    break;
-                case Token.Plus:
-                    verify(Token.And);
-                    break;
-                case Token.Minus:
-                    verify(Token.And);
-                    break;
-                case Token.Star:
-                    verify(Token.And);
-                    break;
-                default:
-                    error("binary operation");
-            }
-            expression();
-            break;
-        case Token.LSquareB:
-            verify(Token.LSquareB);
-            expression();
-            verify(Token.RSquareB);
-            break;
-        case Token.Dot:
-            verify(Token.Dot);
-            if (latoken == Token.Length) {
-                verify(Token.Length);
-            } else if (latoken == Token.Ident) {
-                identifier();
-                verify(Token.LPar);
-                if (verifyExpression(latoken)) {
-                    expression();
-                    while (latoken == Token.Comma) {
-                        verify(Token.Comma);
-                        expression();
-                    }
-                }
-                verify(Token.RPar);
-            } else {
-                error("expression parameters");
-            }
-            break;
-        case Token.IntegerLiteral:
-            verify(Token.IntegerLiteral);
-            break;
-        case Token.True:
-            verify(Token.True);
-            break;
-        case Token.False:
-            verify(Token.False);
-            break;
-        case Token.Ident:
-            identifier();
-            break;
-        case Token.This:
-            verify(Token.This);
-            break;
-        case Token.New:
-            verify(Token.New);
-            if (latoken == Token.Int) {
-                verify(Token.Int);
-                verify(Token.LSquareB);
-                expression();
-                verify(Token.RSquareB);
-            } else if (latoken == Token.Ident) {
-                identifier();
-                verify(Token.LPar);
-                verify(Token.RPar);
-            } else {
-                error("new");
-            }
-            break;
-        case Token.Exclamation:
-            verify(Token.Exclamation);
-            expression();
-            break;
-        case Token.LPar:
-            verify(Token.LPar);
-            expression();
-            verify(Token.RPar);
-            break;
-        default:
-            error("expression");
-    }
+	System.out.println("verifying Expression");
+	verify(Token.Cmd);
 }
 
 public static void identifier() {
+	System.out.println("verifying Identifier");
     verify(Token.Ident);
 }
 
@@ -363,7 +228,7 @@ public static void main(String argv[]) {
 			latoken = scanner.yylex();
 			goal();
             if ( !scanner.zzAtEOF )
-                System.err.println("ERROR!");
+                System.err.println("ERROR: GARBAGE AT THE END OF THE FILE");
           }
           catch (Exception e) {
             System.out.println("Unexpected exception:");
@@ -377,7 +242,7 @@ public static void main(String argv[]) {
 				latoken = scanner.yylex();
 				goal();
 				if ( !scanner.zzAtEOF )
-					System.err.println("ERROR!");
+					System.err.println("ERROR: GARBAGE AT THE END OF THE FILE");
             }
             catch (java.io.FileNotFoundException e) {
                 System.out.println("File not found : \"" + argv[i] + "\"");
@@ -403,6 +268,8 @@ LineTerminator = \r|\n|\r\n
 
 
 %%
+"cmd"|"CMD"                 {return Token.Cmd;} // this only exists to simplify the grammar
+
 
 if                          {return Token.If;}
 else                        {return Token.Else;}
@@ -448,6 +315,7 @@ main                        {return Token.Main;}
 "-"                         {return Token.Minus;}
 "/"                         {return Token.FSlash;}
 "!"                         {return Token.Exclamation;}
+
 "//".*                      { /* Comments are ignored */ }
 "/*"[^"*/"]*"*/"            { /* Comments are ignored */ }
 {WHITESPACE}+               { }
