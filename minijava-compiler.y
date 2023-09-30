@@ -1,85 +1,69 @@
 %{
-  import java.io.*;
+import java.util.*;
 %}
-      
-%token PLUS TIMES INT CR RPAREN LPAREN
 
-%left '-' '+'
-%left '/' '*'
-%left NEG
-%right '^'
-      
-%%
+%token CLASS PUBLIC STATIC VOID MAIN STRING BOOLEAN INT IDENTIFIER INTEGER_LITERAL IF ELSE WHILE PRINTLN TRUE FALSE THIS NEW LENGTH
 
-input:   /* empty string */
-       | input line
-       ;
-      
-line:    NL      { if (interactive) System.out.print("Expression: "); }
-       | exp NL  { System.out.println(" = " + $1); 
-                   if (interactive) System.out.print("Expression: "); }
-       ;
-      
-exp:     NUM                { $$ = $1; }
-       | exp '+' exp        { $$ = $1 + $3; }
-       | exp '-' exp        { $$ = $1 - $3; }
-       | exp '*' exp        { $$ = $1 * $3; }
-       | exp '/' exp        { $$ = $1 / $3; }
-       | '-' exp  %prec NEG { $$ = -$2; }
-       | exp '^' exp        { $$ = Math.pow($1, $3); }
-       | '(' exp ')'        { $$ = $2; }
-       ;
+%left AND
+%left LT PLUS MINUS
+%left TIMES
+
+%start Goal
 
 %%
 
-  private Yylex lexer;
+Goal : MainClass ( ClassDeclaration )* <EOF>
+     ;
 
+MainClass : CLASS IDENTIFIER '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' IDENTIFIER ')' '{' Statement '}' '}'
+          ;
 
-  private int yylex () {
-    int yyl_return = -1;
-    try {
-      yylval = new ParserVal(0);
-      yyl_return = lexer.yylex();
-    }
-    catch (IOException e) {
-      System.err.println("IO error :"+e);
-    }
-    return yyl_return;
-  }
+ClassDeclaration : CLASS IDENTIFIER ( EXTENDS IDENTIFIER )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'
+                 ;
 
+VarDeclaration : Type IDENTIFIER ';'
+               ;
 
-  public void yyerror (String error) {
-    System.err.println ("Error: " + error);
-  }
+MethodDeclaration : PUBLIC Type IDENTIFIER '(' ( Type IDENTIFIER ( ',' Type IDENTIFIER )* )? ')' '{' ( VarDeclaration )* ( Statement )* RETURN Expression ';' '}'
+                  ;
 
+Type : INT '[' ']' | BOOLEAN | INT | IDENTIFIER
+     ;
 
-  public Parser(Reader r) {
-    lexer = new Yylex(r, this);
-  }
+Statement : '{' ( Statement )* '}' | IF '(' Expression ')' Statement ELSE Statement | WHILE '(' Expression ')' Statement
+          | PRINTLN '(' Expression ')' ';' | IDENTIFIER '=' Expression ';' | IDENTIFIER '[' Expression ']' '=' Expression ';'
+          ;
 
+Expression : Expression AND Expression | Expression LT Expression | Expression PLUS Expression | Expression MINUS Expression
+           | Expression TIMES Expression | Expression '[' Expression ']' | Expression '.' LENGTH | Expression '.' IDENTIFIER '(' ( Expression ( ',' Expression )* )? ')'
+           | INTEGER_LITERAL | TRUE | FALSE | IDENTIFIER | THIS | NEW INT '[' Expression ']' | NEW IDENTIFIER '(' ')' | '!' Expression | '(' Expression ')'
+           ;
 
-  static boolean interactive;
+%%
 
-  public static void main(String args[]) throws IOException {
-    System.out.println("BYACC/Java with JFlex Calculator Demo");
+class Parser {
+    public static void main(String[] args) {
+        System.out.println("MiniJava Parser");
 
-    Parser yyparser;
-    if ( args.length > 0 ) {
-      // parse a file
-      yyparser = new Parser(new FileReader(args[0]));
-    }
-    else {
-      // interactive mode
-      System.out.println("[Quit with CTRL-D]");
-      System.out.print("Expression: ");
-      interactive = true;
-	    yyparser = new Parser(new InputStreamReader(System.in));
+        try {
+            Parser parser = new Parser(System.in);
+            parser.yyparse();
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 
-    yyparser.yyparse();
-    
-    if (interactive) {
-      System.out.println();
-      System.out.println("Have a nice day");
+    private Lexer lexer;
+
+    private int yylex() throws IOException {
+        return lexer.yylex();
     }
-  }
+
+    public void yyerror(String error) {
+        System.err.println("Error: " + error);
+    }
+
+    public Parser(InputStream input) {
+        lexer = new Lexer(input);
+    }
+}
