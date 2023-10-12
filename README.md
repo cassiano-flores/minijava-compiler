@@ -16,6 +16,8 @@
 -   Abrir o Jflex, em browse, carregar o arquivo `.l`
 -   java MiniJavaLexer `[NOME-ARQUIVO]`
 
+- .\yacc minijava-compiler.y
+
 ## Observações:
 
 -   Este trabalho foi inteiramente feito a partir de uma extenção do modelo disponibilizado pelo professor.
