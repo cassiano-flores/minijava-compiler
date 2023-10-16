@@ -54,21 +54,21 @@ import java.io.*;
 
 %%
 
-/* Goal : MainClass ( ClassDeclaration )* <EOF> */
-Goal : MainClass ClassDeclList
+Goal : MainClass ClassDeclList { System.out.println("Goal"); }
      ;
 
-/* MainClass : CLASS IDENTIFIER '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' IDENTIFIER ')' '{' Statement '}' '}' */
 MainClass: Class Ident LCurlyB Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB Statement RCurlyB RCurlyB
+		 {
+		 	System.out.println("MainClass");
+		 }
 		 ;
 
 ClassDeclList: /*empty*/
 			 | ClassDeclList ClassDeclaration
 			 ;
 
-/*ClassDeclaration : CLASS IDENTIFIER ( EXTENDS IDENTIFIER )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'*/
-ClassDeclaration: Class Ident LCurlyB VarDeclList MethodDeclList RCurlyB
-				| Class Ident LCurlyB Extends Ident VarDeclList MethodDeclList RCurlyB
+ClassDeclaration: Class Ident LCurlyB VarDeclList MethodDeclList RCurlyB { System.out.println("ClassDeclaration"); }
+				| Class Ident LCurlyB Extends Ident VarDeclList MethodDeclList RCurlyB { System.out.println("ClassDeclaration"); }
 				;
 
 VarDeclList: /*empty*/
@@ -79,13 +79,13 @@ MethodDeclList: /*empty*/
 			  | MethodDeclList MethodDeclaration
 			  ;
 
-/*VarDeclaration : Type IDENTIFIER ';'*/
-VarDeclaration: Type Ident Semicolon
+VarDeclaration: Type Ident Semicolon { System.out.println("VarDeclaration"); }
 			  ;
 
-/*MethodDeclaration : PUBLIC Type IDENTIFIER '(' ( Type IDENTIFIER ( ',' Type IDENTIFIER )* )? ')' '{' ( VarDeclaration )* ( Statement )* RETURN Expression ';' '}'*/
 MethodDeclaration: Public Type Ident LPar RPar LCurlyB VarDeclList StatementList Return Expression Semicolon RCurlyB
+				 { System.out.println("MethodDeclaration"); }
 				 | Public Type Ident LPar Type Ident Args RPar LCurlyB VarDeclList StatementList Return Expression Semicolon RCurlyB
+				 { System.out.println("MethodDeclaration"); }
 				 ;
 
 Args: /*empty*/
@@ -94,70 +94,45 @@ Args: /*empty*/
 
 StatementList: /*empty*/
 			 | StatementList Statement
+			 ;
 
-/* Type : INT '[' ']' | BOOLEAN | INT | IDENTIFIER */
 Type: Int
-	| Boolean
-	| Int LSquareB RSquareB
-	| Ident
+	| Boolean { System.out.println("Type"); }
+	| Int LSquareB RSquareB { System.out.println("Type"); }
+	| Ident { System.out.println("Type"); }
 	;
 
-/*Statement : '{' ( Statement )* '}'
-            | IF '(' Expression ')' Statement ELSE Statement
-			| WHILE '(' Expression ')' Statement
-			| SystemOutPrintln '(' Expression ')' ';'
-			| IDENTIFIER '=' EXPRESSION ';'
-			| IDENTIFIER '[' EXPRESSION ']' '=' EXPRESSION ';'
-			*/
-Statement: LCurlyB StatementList RCurlyB
-		 | If LPar Expression RPar Statement Else Statement
-		 | While LPar Expression RPar
-		 | SystemOutPrintln LPar Expression RPar Semicolon
-		 | Ident Equals Expression Semicolon
-		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon
+Statement: LCurlyB StatementList RCurlyB { System.out.println("Statement"); }
+		 | If LPar Expression RPar Statement Else Statement { System.out.println("Statement"); }
+		 | While LPar Expression RPar { System.out.println("Statement"); }
+		 | SystemOutPrintln LPar Expression RPar Semicolon { System.out.println("Statement"); }
+		 | Ident Equals Expression Semicolon { System.out.println("Statement"); }
+		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon { System.out.println("Statement"); }
 		 ;
 
-/*Expression : Expression AND Expression
-			 | Expression LT Expression
-			 | Expression PLUS Expression
-			 | Expression MINUS Expression
-             | Expression TIMES Expression
-			 | Expression '[' Expression ']'
-			 | Expression '.' LENGTH
-			 | Expression '.' IDENTIFIER '(' ( Expression ( ',' Expression )* )? ')'
-             | INTEGER_LITERAL
-			 | TRUE
-			 | FALSE
-			 | IDENTIFIER
-			 | THIS
-			 | NEW INT '[' Expression ']'
-			 | NEW IDENTIFIER '(' ')'
-			 | '!' Expression
-			 | '(' Expression ')'
-			 */
-Expression: Expression And Expression
-		  | Expression Less Expression
-		  | Expression Plus Expression
-		  | Expression Minus Expression
-		  | Expression Star Expression
-		  | Expression LSquareB Expression RSquareB
-		  | Expression Dot Length
-		  | Expression Dot Ident LPar RPar
-		  | Expression Dot Ident LPar Expression CommaExpressionList RPar
-		  | IntegerLiteral
-		  | True
-		  | False
-		  | Ident
-		  | This
-		  | New Int LSquareB Expression RSquareB
-		  | New Ident LPar RPar
-		  | Exclamation Expression
-		  | LPar Expression RPar
+Expression: Expression And Expression { System.out.println("Expression"); }
+		  | Expression Less Expression { System.out.println("Expression"); }
+		  | Expression Plus Expression { System.out.println("Expression"); }
+		  | Expression Minus Expression { System.out.println("Expression"); }
+		  | Expression Star Expression { System.out.println("Expression"); }
+		  | Expression LSquareB Expression RSquareB { System.out.println("Expression"); }
+		  | Expression Dot Length { System.out.println("Expression"); }
+		  | Expression Dot Ident LPar RPar { System.out.println("Expression"); }
+		  | Expression Dot Ident LPar Expression CommaExpressionList RPar { System.out.println("Expression"); }
+		  | IntegerLiteral { System.out.println("Expression"); }
+		  | True { System.out.println("Expression"); }
+		  | False { System.out.println("Expression"); }
+		  | Ident { System.out.println("Expression"); }
+		  | This { System.out.println("Expression"); }
+		  | New Int LSquareB Expression RSquareB { System.out.println("Expression"); }
+		  | New Ident LPar RPar { System.out.println("Expression"); }
+		  | Exclamation Expression { System.out.println("Expression"); }
+		  | LPar Expression RPar { System.out.println("Expression"); }
 		  ;
 
 CommaExpressionList: /*empty*/
 				   | CommaExpressionList Comma Expression
-
+				   ;
 %%
 
 private MiniJavaLexer lexer;
@@ -248,7 +223,7 @@ public static void main(String args[]) throws IOException {
   }
 
   yyparser.yyparse();
-  
+
   if (interactive) {
     System.out.println();
     System.out.println("Have a nice day");
