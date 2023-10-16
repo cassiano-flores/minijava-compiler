@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -ex
+
+rm -fv MiniJavaLexer.java*
+java -jar jflex.jar minijava-compiler.l
+./yacc.linux -tv -J minijava-compiler.y
+javac MiniJavaLexer.java Parser.java
