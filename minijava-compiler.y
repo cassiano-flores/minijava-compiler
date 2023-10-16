@@ -1,69 +1,279 @@
 %{
 import java.util.*;
+import java.io.*;
 %}
 
-%token CLASS PUBLIC STATIC VOID MAIN STRING BOOLEAN INT IDENTIFIER INTEGER_LITERAL IF ELSE WHILE PRINTLN TRUE FALSE THIS NEW LENGTH
+// All terminals:
+%token Void
+%token Main
+%token Ident
+%token IntegerLiteral
+%token StringLiteral
+%token If
+%token Else
+%token Public
+%token Class
+%token Extends
+%token Static
+%token Return
+%token True
+%token False
+%token This
+%token New
+%token Boolean
+%token String
+%token Int
+%token While
+%token Continue
+%token Length
+%token SystemOutPrintln
+%token Equals
+%token Plus
+%token Star
+%token Semicolon
+%token LCurlyB
+%token RCurlyB
+%token Dot
+%token Comma
+%token LPar
+%token RPar
+%token LSquareB
+%token RSquareB
+%token And
+%token Less
+%token Minus
+%token FSlash
+%token Exclamation
 
-%left AND
-%left LT PLUS MINUS
-%left TIMES
+%right Exclamation
+%left And
+%left Less
+%left Plus Minus
+%left Star
+%left Dot
+%right Equals
+%left LSquareB LPar
 
 %start Goal
 
 %%
 
-Goal : MainClass ( ClassDeclaration )* <EOF>
+Goal : MainClass ClassDeclListOpt { System.out.println("\tGoal"); }
      ;
 
-MainClass : CLASS IDENTIFIER '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' IDENTIFIER ')' '{' Statement '}' '}'
-          ;
+MainClass: Class Ident LCurlyB Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB Statement RCurlyB RCurlyB
+		 {
+		 	System.out.println("\tMainClass");
+		 }
+		 ;
 
-ClassDeclaration : CLASS IDENTIFIER ( EXTENDS IDENTIFIER )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'
-                 ;
+ClassDeclListOpt: /*empty*/
+				| ClassDeclList
+				;
 
-VarDeclaration : Type IDENTIFIER ';'
-               ;
+ClassDeclList: ClassDeclaration
+			 | ClassDeclList ClassDeclaration
+			 ;
 
-MethodDeclaration : PUBLIC Type IDENTIFIER '(' ( Type IDENTIFIER ( ',' Type IDENTIFIER )* )? ')' '{' ( VarDeclaration )* ( Statement )* RETURN Expression ';' '}'
-                  ;
+ClassDeclaration: Class Ident ExtendOpt LCurlyB VarDeclListOpt MethodDeclListOpt RCurlyB { System.out.println("\tClassDeclaration"); }
+				;
 
-Type : INT '[' ']' | BOOLEAN | INT | IDENTIFIER
-     ;
+ExtendOpt: /*empty*/
+		 | Extends Ident
+		 ;
 
-Statement : '{' ( Statement )* '}' | IF '(' Expression ')' Statement ELSE Statement | WHILE '(' Expression ')' Statement
-          | PRINTLN '(' Expression ')' ';' | IDENTIFIER '=' Expression ';' | IDENTIFIER '[' Expression ']' '=' Expression ';'
-          ;
+VarDeclListOpt: /*empty*/
+			  | VarDeclList
+			  ;
 
-Expression : Expression AND Expression | Expression LT Expression | Expression PLUS Expression | Expression MINUS Expression
-           | Expression TIMES Expression | Expression '[' Expression ']' | Expression '.' LENGTH | Expression '.' IDENTIFIER '(' ( Expression ( ',' Expression )* )? ')'
-           | INTEGER_LITERAL | TRUE | FALSE | IDENTIFIER | THIS | NEW INT '[' Expression ']' | NEW IDENTIFIER '(' ')' | '!' Expression | '(' Expression ')'
-           ;
+VarDeclList: VarDeclaration
+		   | VarDeclList VarDeclaration
+		   ;
 
+MethodDeclListOpt: /*empty*/
+			  | MethodDeclList
+			  ;
+
+MethodDeclList: MethodDeclaration
+			  | MethodDeclList MethodDeclaration
+			  ;
+
+VarDeclaration: Type Ident Semicolon { System.out.println("\tVarDeclaration"); }
+			  ;
+
+MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB
+				 { System.out.println("\tMethodDeclaration"); }
+				 ;
+
+Args: /*empty*/
+	| ArgList
+	;
+
+ArgList: Arg
+	| ArgList Comma Arg
+	;
+
+Arg: Type Ident
+   ;
+
+VarOrStatement: /*empty*/
+			  | Ident NextVar
+			  | Int Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+			  | Int LSquareB RSquareB Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+			  | Boolean Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+		 	  | If LPar Expression RPar Statement Else Statement StatementListOpt { System.out.println("\tStatement"); }
+		 	  | While LPar Expression RPar Statement StatementListOpt { System.out.println("\tStatement"); }
+		 	  | SystemOutPrintln LPar Expression RPar Semicolon StatementListOpt { System.out.println("\tStatement"); }
+			  | LCurlyB StatementListOpt RCurlyB StatementListOpt { System.out.println("\tStatement"); }
+			  ;
+
+NextVar: Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+	   | Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
+	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
+	   ;
+
+StatementListOpt: /*empty*/
+			 | StatementList
+
+StatementList: Statement
+			 | StatementList Statement
+			 ;
+
+Type: Int
+	| Boolean { System.out.println("\tType"); }
+	| Int LSquareB RSquareB { System.out.println("\tType"); }
+	| Ident { System.out.println("\tType"); }
+	;
+
+Statement: LCurlyB StatementListOpt RCurlyB { System.out.println("\tStatement"); }
+		 | If LPar Expression RPar Statement Else Statement { System.out.println("\tStatement"); }
+		 | While LPar Expression RPar Statement { System.out.println("\tStatement"); }
+		 | SystemOutPrintln LPar Expression RPar Semicolon { System.out.println("\tStatement"); }
+		 | Ident Equals Expression Semicolon { System.out.println("\tStatement"); }
+		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon { System.out.println("\tStatement"); }
+		 ;
+
+Expression: Expression And Expression { System.out.println("\tExpression"); }
+		  | Expression Less Expression { System.out.println("\tExpression"); }
+		  | Expression Plus Expression { System.out.println("\tExpression"); }
+		  | Expression Minus Expression { System.out.println("\tExpression"); }
+		  | Expression Star Expression { System.out.println("\tExpression"); }
+		  | Expression LSquareB Expression RSquareB { System.out.println("\tExpression"); }
+		  | Expression Dot Length { System.out.println("\tExpression"); }
+		  | Expression Dot Ident LPar ExpressionListOpt RPar { System.out.println("\tExpression"); }
+		  | IntegerLiteral { System.out.println("\tExpression"); }
+		  | True { System.out.println("\tExpression"); }
+		  | False { System.out.println("\tExpression"); }
+		  | Ident { System.out.println("\tExpression"); }
+		  | This { System.out.println("\tExpression"); }
+		  | New Int LSquareB Expression RSquareB { System.out.println("\tExpression"); }
+		  | New Ident LPar RPar { System.out.println("\tExpression"); }
+		  | Exclamation Expression { System.out.println("\tExpression"); }
+		  | LPar Expression RPar { System.out.println("\tExpression"); }
+		  ;
+
+ExpressionListOpt: /*empty*/
+			  | ExpressionList
+			  ;
+
+ExpressionList: Expression
+			  | ExpressionList Comma Expression
+			  ;
 %%
 
-class Parser {
-    public static void main(String[] args) {
-        System.out.println("MiniJava Parser");
+private MiniJavaLexer lexer;
+private int current_token;
 
-        try {
-            Parser parser = new Parser(System.in);
-            parser.yyparse();
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-        }
+private int yylex () {
+    int yyl_return = -1;
+    try {
+      yyl_return = lexer.yylex();
+	  current_token = yyl_return;
+	  System.out.println(intToTokenStr(current_token));
+    } catch (IOException e) {
+      System.err.println("IO error :"+e);
     }
+    return yyl_return;
+}
 
-    private Lexer lexer;
+private String intToTokenStr(int i) {
+	switch (i) {
+		case Void: return "Void";
+		case Main: return "Main";
+		case Ident: return "Ident";
+		case IntegerLiteral: return "IntegerLiteral";
+		case StringLiteral: return "StringLiteral";
+		case If: return "If";
+		case Else: return "Else";
+		case Public: return "Public";
+		case Class: return "Class";
+		case Extends: return "Extends";
+		case Static: return "Static";
+		case Return: return "Return";
+		case True: return "True";
+		case False: return "False";
+		case This: return "This";
+		case New: return "New";
+		case Boolean: return "Boolean";
+		case String: return "String";
+		case Int: return "Int";
+		case While: return "While";
+		case Continue: return "Continue";
+		case Length: return "Length";
+		case SystemOutPrintln: return "SystemOutPrintln";
+		case Equals: return "Equals";
+		case Plus: return "Plus";
+		case Star: return "Star";
+		case Semicolon: return "Semicolon";
+		case LCurlyB: return "LCurlyB";
+		case RCurlyB: return "RCurlyB";
+		case Dot: return "Dot";
+		case Comma: return "Comma";
+		case LPar: return "LPar";
+		case RPar: return "RPar";
+		case LSquareB: return "LSquareB";
+		case RSquareB: return "RSquareB";
+		case And: return "And";
+		case Less: return "Less";
+		case Minus: return "Minus";
+		case FSlash: return "FSlash";
+		case Exclamation: return "Exclamation";
+		case 0: return "EOF";
+	}
+	return "?";
+}
 
-    private int yylex() throws IOException {
-        return lexer.yylex();
-    }
+public void yyerror(String error) {
+	System.err.println("Error: " + error + ", at line: " + lexer.line() + ", token: " + intToTokenStr(this.current_token));
+}
 
-    public void yyerror(String error) {
-        System.err.println("Error: " + error);
-    }
+public Parser(Reader r) {
+	lexer = new MiniJavaLexer(r, this);
+	current_token = -1;
+}
 
-    public Parser(InputStream input) {
-        lexer = new Lexer(input);
-    }
+static boolean interactive;
+
+public static void main(String args[]) throws IOException {
+  System.out.println("MiniJava Parser");
+
+  Parser yyparser;
+  if ( args.length > 0 ) {
+    // parse a file
+    yyparser = new Parser(new FileReader(args[0]));
+  }
+  else {
+    // interactive mode
+    System.out.println("[Quit with CTRL-D]");
+    System.out.print("Expression: ");
+    interactive = true;
+      yyparser = new Parser(new InputStreamReader(System.in));
+  }
+
+  yyparser.yyparse();
+
+  if (interactive) {
+    System.out.println();
+    System.out.println("Have a nice day");
+  }
 }
