@@ -45,10 +45,10 @@ import java.io.*;
 %token FSlash
 %token Exclamation
 
-%left AND
-%left LT
-%left PLUS MINUS
-%left TIMES
+%left And
+%left Less
+%left Plus Minus
+%left Star
 
 %start Goal
 
@@ -59,6 +59,36 @@ Goal : Ident Plus Ident
 
 
 %%
+
+/*
+Goal : MainClass ( ClassDeclaration )* <EOF>
+     ;
+
+MainClass : CLASS IDENTIFIER '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' IDENTIFIER ')' '{' Statement '}' '}'
+          ;
+
+ClassDeclaration : CLASS IDENTIFIER ( EXTENDS IDENTIFIER )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'
+                 ;
+
+VarDeclaration : Type IDENTIFIER ';'
+               ;
+
+MethodDeclaration : PUBLIC Type IDENTIFIER '(' ( Type IDENTIFIER ( ',' Type IDENTIFIER )* )? ')' '{' ( VarDeclaration )* ( Statement )* RETURN Expression ';' '}'
+                  ;
+
+Type : INT '[' ']' | BOOLEAN | INT | IDENTIFIER
+     ;
+
+Statement : '{' ( Statement )* '}' | IF '(' Expression ')' Statement ELSE Statement | WHILE '(' Expression ')' Statement
+          | PRINTLN '(' Expression ')' ';' | IDENTIFIER '=' Expression ';' | IDENTIFIER '[' Expression ']' '=' Expression ';'
+          ;
+
+Expression : Expression AND Expression | Expression LT Expression | Expression PLUS Expression | Expression MINUS Expression
+           | Expression TIMES Expression | Expression '[' Expression ']' | Expression '.' LENGTH | Expression '.' IDENTIFIER '(' ( Expression ( ',' Expression )* )? ')'
+           | INTEGER_LITERAL | TRUE | FALSE | IDENTIFIER | THIS | NEW INT '[' Expression ']' | NEW IDENTIFIER '(' ')' | '!' Expression | '(' Expression ')'
+           ;
+
+*/
 
 private MiniJavaLexer lexer;
 
