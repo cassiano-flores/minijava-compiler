@@ -192,6 +192,7 @@ private String intToTokenStr(int i) {
 		case Minus: return "Minus";
 		case FSlash: return "FSlash";
 		case Exclamation: return "Exclamation";
+		case 0: return "EOF";
 	}
 	return "?";
 }
