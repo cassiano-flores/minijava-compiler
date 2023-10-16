@@ -104,7 +104,7 @@ Type: Int
 
 Statement: LCurlyB StatementList RCurlyB { System.out.println("\tStatement"); }
 		 | If LPar Expression RPar Statement Else Statement { System.out.println("\tStatement"); }
-		 | While LPar Expression RPar { System.out.println("\tStatement"); }
+		 | While LPar Expression RPar Statement { System.out.println("\tStatement"); }
 		 | SystemOutPrintln LPar Expression RPar Semicolon { System.out.println("\tStatement"); }
 		 | Ident Equals Expression Semicolon { System.out.println("\tStatement"); }
 		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon { System.out.println("\tStatement"); }
