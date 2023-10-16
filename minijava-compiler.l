@@ -17,6 +17,10 @@ public MiniJavaLexer(java.io.Reader r, Parser yyparser) {
 	this.yyparser = yyparser;
 }
 
+public int line() {
+	return this.yyline + 1;
+}
+
 %}
 
 DIGIT=        [0-9]
