@@ -75,7 +75,7 @@ ClassDeclList: ClassDeclaration
 			 | ClassDeclList ClassDeclaration
 			 ;
 
-ClassDeclaration: Class Ident LCurlyB ExtendOpt VarDeclListOpt MethodDeclListOpt RCurlyB { System.out.println("\tClassDeclaration"); }
+ClassDeclaration: Class Ident ExtendOpt LCurlyB VarDeclListOpt MethodDeclListOpt RCurlyB { System.out.println("\tClassDeclaration"); }
 				;
 
 ExtendOpt: /*empty*/
@@ -101,7 +101,7 @@ MethodDeclList: MethodDeclaration
 VarDeclaration: Type Ident Semicolon { System.out.println("\tVarDeclaration"); }
 			  ;
 
-MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarDeclListOpt StatementListOpt Return Expression Semicolon RCurlyB
+MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB
 				 { System.out.println("\tMethodDeclaration"); }
 				 ;
 
@@ -115,6 +115,22 @@ ArgList: Arg
 
 Arg: Type Ident
    ;
+
+VarOrStatement: /*empty*/
+			  | Ident NextVar
+			  | Int Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+			  | Int LSquareB RSquareB Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+			  | Boolean Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+		 	  | If LPar Expression RPar Statement Else Statement StatementListOpt { System.out.println("\tStatement"); }
+		 	  | While LPar Expression RPar Statement StatementListOpt { System.out.println("\tStatement"); }
+		 	  | SystemOutPrintln LPar Expression RPar Semicolon StatementListOpt { System.out.println("\tStatement"); }
+			  | LCurlyB StatementListOpt RCurlyB StatementListOpt { System.out.println("\tStatement"); }
+			  ;
+
+NextVar: Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+	   | Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
+	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
+	   ;
 
 StatementListOpt: /*empty*/
 			 | StatementList
