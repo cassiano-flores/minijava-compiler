@@ -45,16 +45,20 @@ import java.io.*;
 %token FSlash
 %token Exclamation
 
+%right Exclamation
 %left And
 %left Less
 %left Plus Minus
 %left Star
+%left Dot
+%right Equals
+%left LSquareB LPar
 
 %start Goal
 
 %%
 
-Goal : MainClass ClassDeclList { System.out.println("\tGoal"); }
+Goal : MainClass ClassDeclListOpt { System.out.println("\tGoal"); }
      ;
 
 MainClass: Class Ident LCurlyB Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB Statement RCurlyB RCurlyB
@@ -63,36 +67,59 @@ MainClass: Class Ident LCurlyB Public Static Void Main LPar String LSquareB RSqu
 		 }
 		 ;
 
-ClassDeclList: /*empty*/
+ClassDeclListOpt: /*empty*/
+				| ClassDeclList
+				;
+
+ClassDeclList: ClassDeclaration
 			 | ClassDeclList ClassDeclaration
 			 ;
 
-ClassDeclaration: Class Ident LCurlyB VarDeclList MethodDeclList RCurlyB { System.out.println("\tClassDeclaration"); }
-				| Class Ident LCurlyB Extends Ident VarDeclList MethodDeclList RCurlyB { System.out.println("\tClassDeclaration"); }
+ClassDeclaration: Class Ident LCurlyB ExtendOpt VarDeclListOpt MethodDeclListOpt RCurlyB { System.out.println("\tClassDeclaration"); }
 				;
 
-VarDeclList: /*empty*/
+ExtendOpt: /*empty*/
+		 | Extends Ident
+		 ;
+
+VarDeclListOpt: /*empty*/
+			  | VarDeclList
+			  ;
+
+VarDeclList: VarDeclaration
 		   | VarDeclList VarDeclaration
 		   ;
 
-MethodDeclList: /*empty*/
+MethodDeclListOpt: /*empty*/
+			  | MethodDeclList
+			  ;
+
+MethodDeclList: MethodDeclaration
 			  | MethodDeclList MethodDeclaration
 			  ;
 
 VarDeclaration: Type Ident Semicolon { System.out.println("\tVarDeclaration"); }
 			  ;
 
-MethodDeclaration: Public Type Ident LPar RPar LCurlyB VarDeclList StatementList Return Expression Semicolon RCurlyB
-				 { System.out.println("\tMethodDeclaration"); }
-				 | Public Type Ident LPar Type Ident Args RPar LCurlyB VarDeclList StatementList Return Expression Semicolon RCurlyB
+MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarDeclListOpt StatementListOpt Return Expression Semicolon RCurlyB
 				 { System.out.println("\tMethodDeclaration"); }
 				 ;
 
 Args: /*empty*/
-	| Args Comma Type Ident
+	| ArgList
 	;
 
-StatementList: /*empty*/
+ArgList: Arg
+	| ArgList Comma Arg
+	;
+
+Arg: Type Ident
+   ;
+
+StatementListOpt: /*empty*/
+			 | StatementList
+
+StatementList: Statement
 			 | StatementList Statement
 			 ;
 
@@ -102,7 +129,7 @@ Type: Int
 	| Ident { System.out.println("\tType"); }
 	;
 
-Statement: LCurlyB StatementList RCurlyB { System.out.println("\tStatement"); }
+Statement: LCurlyB StatementListOpt RCurlyB { System.out.println("\tStatement"); }
 		 | If LPar Expression RPar Statement Else Statement { System.out.println("\tStatement"); }
 		 | While LPar Expression RPar Statement { System.out.println("\tStatement"); }
 		 | SystemOutPrintln LPar Expression RPar Semicolon { System.out.println("\tStatement"); }
@@ -117,8 +144,7 @@ Expression: Expression And Expression { System.out.println("\tExpression"); }
 		  | Expression Star Expression { System.out.println("\tExpression"); }
 		  | Expression LSquareB Expression RSquareB { System.out.println("\tExpression"); }
 		  | Expression Dot Length { System.out.println("\tExpression"); }
-		  | Expression Dot Ident LPar RPar { System.out.println("\tExpression"); }
-		  | Expression Dot Ident LPar Expression CommaExpressionList RPar { System.out.println("\tExpression"); }
+		  | Expression Dot Ident LPar ExpressionListOpt RPar { System.out.println("\tExpression"); }
 		  | IntegerLiteral { System.out.println("\tExpression"); }
 		  | True { System.out.println("\tExpression"); }
 		  | False { System.out.println("\tExpression"); }
@@ -130,9 +156,13 @@ Expression: Expression And Expression { System.out.println("\tExpression"); }
 		  | LPar Expression RPar { System.out.println("\tExpression"); }
 		  ;
 
-CommaExpressionList: /*empty*/
-				   | CommaExpressionList Comma Expression
-				   ;
+ExpressionListOpt: /*empty*/
+			  | ExpressionList
+			  ;
+
+ExpressionList: Expression
+			  | ExpressionList Comma Expression
+			  ;
 %%
 
 private MiniJavaLexer lexer;
