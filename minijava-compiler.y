@@ -98,7 +98,7 @@ MethodDeclList: MethodDeclaration
 			  | MethodDeclList MethodDeclaration
 			  ;
 
-VarDeclaration: Type Ident Semicolon { System.out.println("\tVarDeclaration"); }
+VarDeclaration: Type Ident Semicolon { scope.symbols.peek().insert(new TS_entry($1, $2)); }
 			  ;
 
 MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB
@@ -183,6 +183,7 @@ ExpressionList: Expression
 
 private MiniJavaLexer lexer;
 private int current_token;
+private Scope scope;
 
 private int yylex () {
     int yyl_return = -1;
