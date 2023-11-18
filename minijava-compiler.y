@@ -63,20 +63,29 @@ Goal : MainClass ClassDeclListOpt { System.out.println("\tGoal"); }
      ;
 
 MainClass: Class Ident LCurlyB {
-		    // Como essa eh sempre a primeira coisa a ser declarada, nunca teremos um problema do
-			// identificador jah existir
+		    // Como essa eh sempre a primeira coisa a ser declarada, nunca teremos um problema dos
+			// identificadores jah existirem
 
 			System.out.println("Inserindo classe '" + $2.sval + "' em: " + printScopes());
 			scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
 			System.out.println("Empilhando escopo: " + $2.sval);
 			scopes.push(new Scope($2.sval));
 		 } Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB {
+			TS_entry entry = new TS_entry("main", Tp_VOID);
+			scopes.peek().symbols.insert(entry);
+			System.out.println("Inserindo metodo '" + entry + "' em: " + printScopes());
 
+			System.out.println("Empilhando escopo: main");
+			scopes.push(new Scope("main"));
+
+			entry = new TS_entry($13.sval, new TS_entry("String[]", null, null),  ClasseID.NomeParam);
+			scopes.peek().symbols.insert(entry);
+			// imprime manualmente porque String[] eh especial
+			System.out.println("Inserindo parametro 'Id: " + $13.sval + ", Tipo: String[]" + "' em: " + printScopes());
 		 } Statement RCurlyB {
-
+			System.out.println("Desempilhando escopo: " + scopes.pop().desc);
 		 } RCurlyB {
 			System.out.println("Desempilhando escopo: " + scopes.pop().desc);
-		 	System.out.println("\tMainClass");
 		 }
 		 ;
 
@@ -253,6 +262,10 @@ public static TS_entry Tp_INT =  new TS_entry("int", null, ClasseID.TipoBase);
 public static TS_entry Tp_ARRAY =  new TS_entry("array", null, ClasseID.TipoBase);
 public static TS_entry Tp_BOOL = new TS_entry("bool", null,  ClasseID.TipoBase);
 public static TS_entry Tp_ERRO = new TS_entry("_erro_", null,  ClasseID.TipoBase);
+
+// apenas para a main
+// note que 'void' nao eh um tipo base; ninguem pode ser void, exceto a main()
+public static TS_entry Tp_VOID = new TS_entry("void", null,  null);
 
 private MiniJavaLexer lexer;
 private int current_token;
