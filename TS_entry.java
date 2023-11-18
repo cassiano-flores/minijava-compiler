@@ -11,12 +11,21 @@ public class TS_entry {
   private String id;
   private ClasseID classe;
   private TS_entry tipo;
+  private TS_entry returnType;
 
-  // construtor para arrays
   public TS_entry(String umId, TS_entry umTipo, ClasseID umaClasse) {
     id = umId;
     tipo = umTipo;
     classe = umaClasse;
+	returnType = null;
+  }
+
+  // construtor para funcoes
+  public TS_entry(String umId, TS_entry returnType) {
+    id = umId;
+    tipo = null;
+    classe = ClasseID.NomeFuncao;
+	returnType = returnType;
   }
 
   public String getId() {

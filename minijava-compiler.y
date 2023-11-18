@@ -62,8 +62,20 @@ import java.util.stream.Collectors;
 Goal : MainClass ClassDeclListOpt { System.out.println("\tGoal"); }
      ;
 
-MainClass: Class Ident LCurlyB Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB Statement RCurlyB RCurlyB
-		 {
+MainClass: Class Ident LCurlyB {
+		    // Como essa eh sempre a primeira coisa a ser declarada, nunca teremos um problema do
+			// identificador jah existir
+
+			System.out.println("Inserindo classe '" + $2.sval + "' em: " + printScopes());
+			scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
+			System.out.println("Empilhando escopo: " + $2.sval);
+			scopes.push(new Scope($2.sval));
+		 } Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB {
+
+		 } Statement RCurlyB {
+
+		 } RCurlyB {
+			System.out.println("Desempilhando escopo: " + scopes.pop().desc);
 		 	System.out.println("\tMainClass");
 		 }
 		 ;
@@ -82,11 +94,11 @@ ClassDeclaration: Class Ident ExtendOpt LCurlyB {
 						yyerror("variable " + $2.sval + " was already declared");
 						// TODO: error in the end
 					} else {
-						System.out.println("Inserindo classe '" + $2.sval + "' no escopo: " + printScopes());
+						System.out.println("Inserindo classe '" + $2.sval + "' em: " + printScopes());
 						scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
 					}
 					System.out.println("Empilhando escopo: " + $2.sval);
-					scopes.push(new Scope("class " + $2.sval));
+					scopes.push(new Scope($2.sval));
 				}
 				FieldDeclListOpt MethodDeclListOpt RCurlyB {
 					System.out.println("Desempilhando escopo: " + scopes.pop().desc);
@@ -114,17 +126,34 @@ MethodDeclList: MethodDeclaration
 			  ;
 
 FieldDeclaration: Type Ident Semicolon {
-			      TS_entry entry = new TS_entry($2.sval, (TS_entry)$1.obj,  ClasseID.CampoClasse);
-				  scopes.peek()   // pego o escopo no topo da stack
-				  .symbols // pega a sua tabela de simbolos
-				  .insert(entry); // insere um novo simbolo
-				  System.out.println("Inserindo campo '" + entry + "' na classe: '" + scopes.peek().desc + "'");
+				TS_entry nodo = scopes.peek().symbols.pesquisa($2.sval);
+				if (nodo != null) {
+					yyerror("field " + $2.sval + " was already declared");
+					// TODO: error in the end
+				} else {
+					TS_entry entry = new TS_entry($2.sval, (TS_entry)$1.obj,  ClasseID.CampoClasse);
+					scopes.peek().symbols.insert(entry);
+					System.out.println("Inserindo campo '" + entry + "' em: " + printScopes());
+				}
 			  }
 			  ;
 
-MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB
-				 { System.out.println("\tMethodDeclaration"); }
-				 ;
+MethodDeclaration: Public Type Ident {
+					TS_entry nodo = scopes.peek().symbols.pesquisa($3.sval);
+					if (nodo != null) {
+						yyerror("identifier " + $3.sval + " is already in use");
+						// TODO: error in the end
+					} else {
+						TS_entry entry = new TS_entry($3.sval, (TS_entry)$2.obj);
+						scopes.peek().symbols.insert(entry);
+						System.out.println("Inserindo metodo '" + entry + "' em: " + printScopes());
+					}
+					System.out.println("Empilhando escopo: " + $3.sval);
+					scopes.push(new Scope($3.sval));
+				} LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB {
+					System.out.println("Desempilhando escopo: " + scopes.pop().desc);
+				}
+				;
 
 Args: /*empty*/
 	| ArgList
@@ -134,7 +163,17 @@ ArgList: Arg
 	| ArgList Comma Arg
 	;
 
-Arg: Type Ident
+Arg: Type Ident {
+		TS_entry nodo = findInScope($2.sval, ClasseID.NomeParam);
+		if (nodo != null) {
+			yyerror("parameter " + $2.sval + " was already declared");
+			// TODO: error in the end
+		} else {
+			TS_entry entry = new TS_entry($2.sval, (TS_entry)$1.obj,  ClasseID.NomeParam);
+			scopes.peek().symbols.insert(entry);
+			System.out.println("Inserindo parametro '" + entry + "' em: " + printScopes());
+		}
+   }
    ;
 
 VarOrStatement: /*empty*/
@@ -286,7 +325,7 @@ public void yyerror(String error) {
 private String printScopes() {
 	return scopes.stream()
 				.map(x -> {return x.desc;})
-				.collect( Collectors.joining( " -> " ) );
+				.collect( Collectors.joining( "." ));
 }
 
 private TS_entry findInScope(String ident, ClasseID classId) {
@@ -309,7 +348,7 @@ public Parser(Reader r) {
 	lexer = new MiniJavaLexer(r, this);
 	current_token = -1;
 	scopes = new Stack<Scope>();
-	scopes.push(new Scope("toplevel"));
+	scopes.push(new Scope("TopLevel"));
 }
 
 static boolean interactive;
