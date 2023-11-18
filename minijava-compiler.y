@@ -158,6 +158,9 @@ MethodDeclaration: Public Type Ident {
 						TS_entry entry = new TS_entry($3.sval, (TS_entry)$2.obj);
 						scopes.peek().symbols.insert(entry);
 						System.out.println("Inserindo metodo '" + entry + "' em: " + printScopes());
+
+						curMethod = entry;
+						nearestClass().params_or_functions.add(entry);
 					}
 					System.out.println("Empilhando escopo: " + $3.sval);
 					scopes.push(new Scope($3.sval));
@@ -183,6 +186,7 @@ Arg: Type Ident {
 			TS_entry entry = new TS_entry($2.sval, (TS_entry)$1.obj,  ClasseID.NomeParam);
 			scopes.peek().symbols.insert(entry);
 			System.out.println("Inserindo parametro '" + entry + "' em: " + printScopes());
+			curMethod.params_or_functions.add(entry);
 		}
    }
    ;
@@ -258,19 +262,21 @@ NextVar: Ident Semicolon {
 			}
 	   } VarOrStatement
 	   | Equals Expression Semicolon {
-			//TS_entry nodo = findInScope(varOrStatementIdent.sval, ClasseID.NomeParam);	
-			//if (nodo == null)
-			//	nodo = findInScope(varOrStatementIdent.sval, ClasseID.VarLocal);	
+			TS_entry nodo = findInScope(varOrStatementIdent.sval, ClasseID.NomeParam);	
+			if (nodo == null)
+				nodo = findInScope(varOrStatementIdent.sval, ClasseID.VarLocal);	
+			if (nodo == null)
+				nodo = findInScope(varOrStatementIdent.sval, ClasseID.CampoClasse);	
 
-			//if (nodo == null) {
-			//	yyerror("identifier " + varOrStatementIdent.sval + " not found in scope!");
-			//	// TODO: error in the end
-			//} else if (!nodo.getTipoStr().equals(((TS_entry)$2.obj).getTipoStr())) {
-			//	yyerror("type mismatch! Identifier " + varOrStatementIdent.sval
-			//		+ " has type " + nodo.getTipoStr() + " but expression has type " + 
-			//		((TS_entry)$2.obj).getTipoStr());
-			//	// TODO: error in the end
-			//}
+			if (nodo == null) {
+				yyerror("identifier " + varOrStatementIdent.sval + " not found in scope!");
+				// TODO: error in the end
+			} else if (!nodo.getTipo().getTipoStr().equals(((TS_entry)$2.obj).getTipoStr())) {
+				yyerror("type mismatch! Identifier " + varOrStatementIdent.sval
+					+ " has type " + nodo.getTipo().getTipoStr() + " but expression has type " + 
+					((TS_entry)$2.obj).getTipoStr());
+				// TODO: error in the end
+			}
 	   } StatementListOpt
 	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
 	   ;
@@ -288,7 +294,7 @@ Type: Int { $$ = new ParserVal(Tp_INT); }
 	| Ident { 
 		TS_entry nodo = findInScope($1.sval, ClasseID.NomeClasse);
 		if (nodo == null) {
-			yyerror("variable " + $1.sval + " was already declared");
+			yyerror("class " + $1.sval + " was not declared");
 			$$ = new ParserVal(Tp_ERRO);
 		} else {
 			$$ = new ParserVal(nodo);
@@ -304,26 +310,134 @@ Statement: LCurlyB StatementListOpt RCurlyB { System.out.println("\tStatement");
 		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon { System.out.println("\tStatement"); }
 		 ;
 
-Expression: Expression And Expression { System.out.println("\tExpression"); }
-		  | Expression Less Expression { System.out.println("\tExpression"); }
-		  | Expression Plus Expression { System.out.println("\tExpression"); }
-		  | Expression Minus Expression { System.out.println("\tExpression"); }
-		  | Expression Star Expression { System.out.println("\tExpression"); }
-		  | Expression LSquareB Expression RSquareB { System.out.println("\tExpression"); }
-		  | Expression Dot Length { System.out.println("\tExpression"); }
-		  | Expression Dot Ident LPar ExpressionListOpt RPar { System.out.println("\tExpression"); }
-		  | IntegerLiteral { System.out.println("\tExpression"); }
-		  | True { System.out.println("\tExpression"); }
-		  | False { System.out.println("\tExpression"); }
-		  | Ident { System.out.println("\tExpression"); }
+Expression: Expression And Expression { 
+		  		if (((TS_entry)$1.obj) == Tp_BOOL && ((TS_entry)$3.obj) == Tp_BOOL)
+					$$ = new ParserVal(Tp_BOOL);
+				else {
+					yyerror("type mismatch! Expected two booleans, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+			}
+		  | Expression Less Expression {
+		  		if (((TS_entry)$1.obj) == Tp_INT && ((TS_entry)$3.obj) == Tp_INT)
+					$$ = new ParserVal(Tp_BOOL);
+				else {
+					yyerror("type mismatch! Expected two ints, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+			}
+		  | Expression Plus Expression { 
+		  		if (((TS_entry)$1.obj) == Tp_INT && ((TS_entry)$3.obj) == Tp_INT)
+					$$ = new ParserVal(Tp_INT);
+				else {
+					yyerror("type mismatch! Expected two ints, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+		 }
+		  | Expression Minus Expression { 
+		  		if (((TS_entry)$1.obj) == Tp_INT && ((TS_entry)$3.obj) == Tp_INT)
+					$$ = new ParserVal(Tp_INT);
+				else {
+					yyerror("type mismatch! Expected two ints, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+			}
+		  | Expression Star Expression { 
+		  		if (((TS_entry)$1.obj) == Tp_INT && ((TS_entry)$3.obj) == Tp_INT)
+					$$ = new ParserVal(Tp_INT);
+				else {
+					yyerror("type mismatch! Expected two ints, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+			}
+		  | Expression LSquareB Expression RSquareB { 
+		  		if (((TS_entry)$1.obj) == Tp_ARRAY && ((TS_entry)$3.obj) == Tp_INT)
+					$$ = new ParserVal(Tp_INT);
+				else {
+					yyerror("type mismatch! Expected an array and an int, found: " + ((TS_entry)$1.obj) + " and " + ((TS_entry)$3.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+			}
+		  | Expression Dot Length {
+		  		if (((TS_entry)$1.obj) == Tp_ARRAY)
+					$$ = new ParserVal(Tp_INT);
+				else {
+					yyerror("type mismatch! Expected an array, found: " + ((TS_entry)$1.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+		  }
+		  | Expression Dot Ident LPar ExpressionListOpt RPar { 
+				TS_entry entry = ((TS_entry)$1.obj);
+				if (entry.getClasse() != ClasseID.NomeClasse) {
+					yyerror("type mismatch! Expected a class, found: " + ((TS_entry)$1.obj).getTipoStr());
+					$$ = new ParserVal(Tp_ERRO);
+				} else {
+					entry = findInScope(entry.getId(), ClasseID.NomeClasse);
+				    TS_entry found = null;
+					for (int i = 0; i < entry.params_or_functions.size(); ++i) {
+						if (entry.params_or_functions.get(i).getId().equals($3.sval)) {
+							found = entry.params_or_functions.get(i);
+						}
+					}
+
+					if (found == null) {
+						yyerror("method " + $3.sval + " does not exist for class " + entry.getId());
+						$$ = new ParserVal(Tp_ERRO);
+					} else {
+						// TODO: type check paramenters
+						$$ = new ParserVal(found.returnType);
+					}
+				}
+
+			}
+		  | IntegerLiteral { $$ = new ParserVal(Tp_INT); }
+		  | True { $$ = new ParserVal(Tp_BOOL); }
+		  | False {  $$ = new ParserVal(Tp_BOOL); }
+		  | Ident { 
+			TS_entry nodo = findInScope($1.sval, ClasseID.NomeParam);	
+			if (nodo == null)
+				nodo = findInScope($1.sval, ClasseID.VarLocal);	
+			if (nodo == null)
+				nodo = findInScope($1.sval, ClasseID.CampoClasse);	
+
+			if (nodo == null) {
+				yyerror("identifier " + $1.sval + " not found in scope!");
+				$$ = new ParserVal(Tp_ERRO);
+				// TODO: error in the end
+			} else {
+				$$ = new ParserVal(nodo.getTipo());
+			}
+		  }
 		  | This {
 			  $$ = new ParserVal(nearestClass());
 			  System.out.println("this has type: " + nearestClass());
 		  }
-		  | New Int LSquareB Expression RSquareB { System.out.println("\tExpression"); }
-		  | New Ident LPar RPar { System.out.println("\tExpression"); }
-		  | Exclamation Expression { System.out.println("\tExpression"); }
-		  | LPar Expression RPar { System.out.println("\tExpression"); }
+		  | New Int LSquareB Expression RSquareB { 
+			if ((TS_entry)$4.obj == Tp_INT)
+				$$ = new ParserVal(Tp_ARRAY);
+			else {
+				yyerror("type mismatch! Expected an int, found: " + ((TS_entry)$4.obj));
+				$$ = new ParserVal(Tp_ERRO);
+			}
+		  }
+		  | New Ident LPar RPar { 
+				TS_entry nodo = findInScope($2.sval, ClasseID.NomeClasse);
+				if (nodo == null) {
+					yyerror("class " + $2.sval + " was not declared");
+					$$ = new ParserVal(Tp_ERRO);
+				} else {
+					$$ = new ParserVal(nodo);
+				}
+			}
+		  | Exclamation Expression { 
+		  		if ((TS_entry)$2.obj == Tp_BOOL)
+					$$ = new ParserVal(Tp_BOOL);
+				else {
+					yyerror("type mismatch! Expected a boolean, found: " + ((TS_entry)$2.obj));
+					$$ = new ParserVal(Tp_ERRO);
+				}
+ }
+		  | LPar Expression RPar { $$ = $2; }
 		  ;
 
 ExpressionListOpt: /*empty*/
@@ -350,6 +464,7 @@ private ClasseID currClass;
 private Stack<Scope> scopes;
 
 private ParserVal varOrStatementIdent;
+private TS_entry curMethod;
 
 private int yylex () {
     int yyl_return = -1;
@@ -421,30 +536,34 @@ private String printScopes() {
 }
 
 private TS_entry findInScope(String ident, ClasseID classId) {
-	Scope s = scopes.stream()
-					.filter(scope -> {
-						return scope.symbols.pesquisa(ident) != null &&
-							   scope.symbols.pesquisa(ident).getClasse() == classId;
-						}
-					)
-					.findAny()
-					.orElse(null);
+	Stack<Scope> aux = new Stack<Scope>();
+	TS_entry ret = null;
+	while (!scopes.empty()) {
+		Scope s = scopes.pop();
+		aux.push(s);
 
-    if (s == null)
-		return null;
-	
-	return s.symbols.pesquisa(ident);
+		TS_entry symbol = s.symbols.pesquisa(ident);
+		if (symbol != null && symbol.getClasse() == classId) {
+			ret = symbol;
+			break;
+		}
+	}
+
+	while (!aux.empty())
+		scopes.push(aux.pop());
+
+	return ret;
 }
 
 private TS_entry nearestClass() {
 	Stack<Scope> aux = new Stack<Scope>();
 	TS_entry ret = null;
-	while (!scopes.peek().desc.equals("TopLevel")) {
+	while (!scopes.empty()) {
 		Scope s = scopes.pop();
 		aux.push(s);
 
 		if (s.classe != null) {
-			ret = s.classe;
+			ret = findInScope(s.classe.getId(), ClasseID.NomeClasse);
 			break;
 		}
 	}

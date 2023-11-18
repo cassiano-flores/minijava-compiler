@@ -11,21 +11,28 @@ public class TS_entry {
   private String id;
   private ClasseID classe;
   private TS_entry tipo;
-  private TS_entry returnType;
+
+  // usado em classes e funcoes
+  public ArrayList<TS_entry> params_or_functions;
+
+  // apenas para funcoes
+  public TS_entry returnType;
 
   public TS_entry(String umId, TS_entry umTipo, ClasseID umaClasse) {
-    id = umId;
-    tipo = umTipo;
-    classe = umaClasse;
-	returnType = null;
+    this.id = umId;
+    this.tipo = umTipo;
+    this.classe = umaClasse;
+	this.returnType = null;
+	this.params_or_functions = new ArrayList<TS_entry>();
   }
 
   // construtor para funcoes
   public TS_entry(String umId, TS_entry returnType) {
-    id = umId;
-    tipo = null;
-    classe = ClasseID.NomeFuncao;
-	returnType = returnType;
+    this.id = umId;
+    this.tipo = null;
+    this.classe = ClasseID.NomeFuncao;
+	this.params_or_functions = new ArrayList<TS_entry>();
+	this.returnType = returnType;
   }
 
   public String getId() {

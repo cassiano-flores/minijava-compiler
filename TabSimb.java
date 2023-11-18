@@ -30,6 +30,15 @@ public class TabSimb {
     return null;
   }
 
+  public void update(String Id, TS_entry updt) {
+	  for (int i = 0; i < lista.size(); ++i) {
+		  if (lista.get(i).getId().equals(Id)) {
+			  lista.set(i, updt);
+			  break;
+		  }
+	  }
+  }
+
   public ArrayList<TS_entry> getLista() {
     return lista;
   }
