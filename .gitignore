@@ -1,3 +1,7 @@
 *.class
 *.jar
 !jflex.jar
+MiniJavaLexer.java
+Parser.java
+ParserVal.java
+y.output

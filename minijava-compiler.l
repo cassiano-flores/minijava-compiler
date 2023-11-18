@@ -50,8 +50,14 @@ length                      {return Parser.Length;}
 void                        {return Parser.Void;}
 main                        {return Parser.Main;}
 
-[a-zA-Z]([a-zA-Z]|[0-9]|_)* {return Parser.Ident;}
-{DIGIT}+                    {return Parser.IntegerLiteral;}
+[a-zA-Z]([a-zA-Z]|[0-9]|_)* {
+								yyparser.yylval = new ParserVal(yytext());
+								return Parser.Ident;
+							}
+{DIGIT}+                    {
+								yyparser.yylval = new ParserVal(Integer.parseInt(yytext()));
+								return Parser.IntegerLiteral;
+							}
 
 // Below: we need to first escape the '\', then the '"', so we end up with '\\\"'
 \"(\\\"|[^\"])*\"           {return Parser.StringLiteral;}

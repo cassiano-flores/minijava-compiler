@@ -27,15 +27,19 @@ public class TS_entry {
     return tipo;
   }
 
+  public ClasseID getClasse() {
+    return classe;
+  }
+
   public String toString() {
     StringBuilder aux = new StringBuilder("");
 
     aux.append("Id: ");
-    aux.append(String.format("%-10s", id));
+    aux.append(id);
 
-    aux.append("\tClasse: ");
+    aux.append(", Classe: ");
     aux.append(classe);
-    aux.append("\tTipo: ");
+    aux.append(", Tipo: ");
     aux.append(tipo2str(this.tipo));
 
     return aux.toString();
@@ -46,17 +50,27 @@ public class TS_entry {
   }
 
   public String tipo2str(TS_entry tipo) {
-    if (tipo == null)
-      return "null";
-    else if (tipo == Parser.Tp_INT)
+    if (tipo == null) {
+		if (classe == ClasseID.NomeClasse)
+			return "class";
+		else if (classe == ClasseID.NomeFuncao)
+			return "function";
+		else
+			return "null";
+	} else if (tipo == Parser.Tp_INT)
       return "int";
     else if (tipo == Parser.Tp_BOOL)
       return "boolean";
-    else if (tipo == Parser.Tp_DOUBLE)
-      return "double";
     else if (tipo == Parser.Tp_ERRO)
       return "_erro_";
-    else
-      return "erro/tp";
+    else {
+	  if (tipo.classe == ClasseID.NomeClasse) {
+			return "class " + tipo.id;
+	  } else if (tipo.classe == ClasseID.NomeFuncao) {
+			return "function " + tipo.id;
+	  } else {
+			return "erro/tp";
+	  }
+	}
   }
 }

@@ -1,10 +1,10 @@
-import java.util.Stack;
-
 public class Scope {
 
-  public Stack<TabSimb> symbols;
+  public TabSimb symbols;
+  public final String desc; //descricao do scopo atual
 
-  public Scope() {
-    this.symbols = new Stack<TabSimb>();
+  public Scope(String desc) {
+    this.symbols = new TabSimb();
+	this.desc = desc;
   }
 }

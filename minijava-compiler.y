@@ -1,6 +1,7 @@
 %{
 import java.util.*;
 import java.io.*;
+import java.util.stream.Collectors;
 %}
 
 // All terminals:
@@ -75,19 +76,33 @@ ClassDeclList: ClassDeclaration
 			 | ClassDeclList ClassDeclaration
 			 ;
 
-ClassDeclaration: Class Ident ExtendOpt LCurlyB VarDeclListOpt MethodDeclListOpt RCurlyB { System.out.println("\tClassDeclaration"); }
+ClassDeclaration: Class Ident ExtendOpt LCurlyB {
+					TS_entry nodo = scopes.peek().symbols.pesquisa($2.sval);
+					if (nodo != null) {
+						yyerror("variable " + $2.sval + " was already declared");
+						// TODO: error in the end
+					} else {
+						System.out.println("Inserindo classe '" + $2.sval + "' no escopo: " + printScopes());
+						scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
+					}
+					System.out.println("Empilhando escopo: " + $2.sval);
+					scopes.push(new Scope("class " + $2.sval));
+				}
+				FieldDeclListOpt MethodDeclListOpt RCurlyB {
+					System.out.println("Desempilhando escopo: " + scopes.pop().desc);
+				}
 				;
 
 ExtendOpt: /*empty*/
 		 | Extends Ident
 		 ;
 
-VarDeclListOpt: /*empty*/
-			  | VarDeclList
+FieldDeclListOpt: /*empty*/
+			  | FieldDeclList
 			  ;
 
-VarDeclList: VarDeclaration
-		   | VarDeclList VarDeclaration
+FieldDeclList: FieldDeclaration
+		   | FieldDeclList FieldDeclaration
 		   ;
 
 MethodDeclListOpt: /*empty*/
@@ -98,7 +113,13 @@ MethodDeclList: MethodDeclaration
 			  | MethodDeclList MethodDeclaration
 			  ;
 
-VarDeclaration: Type Ident Semicolon { scope.symbols.peek().insert(new TS_entry($1, $2)); }
+FieldDeclaration: Type Ident Semicolon {
+			      TS_entry entry = new TS_entry($2.sval, (TS_entry)$1.obj,  ClasseID.CampoClasse);
+				  scopes.peek()   // pego o escopo no topo da stack
+				  .symbols // pega a sua tabela de simbolos
+				  .insert(entry); // insere um novo simbolo
+				  System.out.println("Inserindo campo '" + entry + "' na classe: '" + scopes.peek().desc + "'");
+			  }
 			  ;
 
 MethodDeclaration: Public Type Ident LPar Args RPar LCurlyB VarOrStatement Return Expression Semicolon RCurlyB
@@ -139,10 +160,18 @@ StatementList: Statement
 			 | StatementList Statement
 			 ;
 
-Type: Int
-	| Boolean { System.out.println("\tType"); }
-	| Int LSquareB RSquareB { System.out.println("\tType"); }
-	| Ident { System.out.println("\tType"); }
+Type: Int { $$ = new ParserVal(Tp_INT); }
+	| Boolean { $$ = new ParserVal(Tp_BOOL); }
+	| Int LSquareB RSquareB { $$ = new ParserVal(Tp_ARRAY); }
+	| Ident { 
+		TS_entry nodo = findInScope($1.sval, ClasseID.NomeClasse);
+		if (nodo == null) {
+			yyerror("variable " + $1.sval + " was already declared");
+			$$ = new ParserVal(Tp_ERRO);
+		} else {
+			$$ = new ParserVal(nodo);
+		}
+	}
 	;
 
 Statement: LCurlyB StatementListOpt RCurlyB { System.out.println("\tStatement"); }
@@ -181,9 +210,15 @@ ExpressionList: Expression
 			  ;
 %%
 
+public static TS_entry Tp_INT =  new TS_entry("int", null, ClasseID.TipoBase);
+public static TS_entry Tp_ARRAY =  new TS_entry("array", null, ClasseID.TipoBase);
+public static TS_entry Tp_BOOL = new TS_entry("bool", null,  ClasseID.TipoBase);
+public static TS_entry Tp_ERRO = new TS_entry("_erro_", null,  ClasseID.TipoBase);
+
 private MiniJavaLexer lexer;
 private int current_token;
-private Scope scope;
+private ClasseID currClass;
+private Stack<Scope> scopes;
 
 private int yylex () {
     int yyl_return = -1;
@@ -248,9 +283,33 @@ public void yyerror(String error) {
 	System.err.println("Error: " + error + ", at line: " + lexer.line() + ", token: " + intToTokenStr(this.current_token));
 }
 
+private String printScopes() {
+	return scopes.stream()
+				.map(x -> {return x.desc;})
+				.collect( Collectors.joining( " -> " ) );
+}
+
+private TS_entry findInScope(String ident, ClasseID classId) {
+	Scope s = scopes.stream()
+					.filter(scope -> {
+						return scope.symbols.pesquisa(ident) != null &&
+							   scope.symbols.pesquisa(ident).getClasse() == classId;
+						}
+					)
+					.findAny()
+					.orElse(null);
+
+    if (s == null)
+		return null;
+	
+	return s.symbols.pesquisa(ident);
+  }
+
 public Parser(Reader r) {
 	lexer = new MiniJavaLexer(r, this);
 	current_token = -1;
+	scopes = new Stack<Scope>();
+	scopes.push(new Scope("toplevel"));
 }
 
 static boolean interactive;
