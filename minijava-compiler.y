@@ -186,17 +186,75 @@ Arg: Type Ident {
    ;
 
 VarOrStatement: /*empty*/
-			  | Ident NextVar
-			  | Int Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
-			  | Int LSquareB RSquareB Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
-			  | Boolean Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+			  | Ident NextVar { varOrStatementIdent = $1; }
+			  | Int Ident Semicolon VarOrStatement { 
+			  		TS_entry nodo = findInScope($2.sval, ClasseID.NomeParam);	
+					if (nodo == null)
+						nodo = findInScope($2.sval, ClasseID.VarLocal);	
+
+					if (nodo != null) {
+						yyerror("identifier " + $2.sval + " was already declared");
+						// TODO: error in the end
+					} else {
+						TS_entry entry = new TS_entry($2.sval, Tp_INT,  ClasseID.VarLocal);
+						scopes.peek().symbols.insert(entry);
+						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
+					}
+			  }
+			  | Int LSquareB RSquareB Ident Semicolon VarOrStatement { 
+			  		TS_entry nodo = findInScope($4.sval, ClasseID.NomeParam);	
+					if (nodo == null)
+						nodo = findInScope($4.sval, ClasseID.VarLocal);	
+
+					if (nodo != null) {
+						yyerror("identifier " + $4.sval + " was already declared");
+						// TODO: error in the end
+					} else {
+						TS_entry entry = new TS_entry($2.sval, Tp_ARRAY,  ClasseID.VarLocal);
+						scopes.peek().symbols.insert(entry);
+						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
+					}
+			  }
+			  | Boolean Ident Semicolon VarOrStatement { 
+			  		TS_entry nodo = findInScope($2.sval, ClasseID.NomeParam);	
+					if (nodo == null)
+						nodo = findInScope($2.sval, ClasseID.VarLocal);	
+
+					if (nodo != null) {
+						yyerror("identifier " + $2.sval + " was already declared");
+						// TODO: error in the end
+					} else {
+						TS_entry entry = new TS_entry($2.sval, Tp_BOOL,  ClasseID.VarLocal);
+						scopes.peek().symbols.insert(entry);
+						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
+					}
+			  }
 		 	  | If LPar Expression RPar Statement Else Statement StatementListOpt { System.out.println("\tStatement"); }
 		 	  | While LPar Expression RPar Statement StatementListOpt { System.out.println("\tStatement"); }
 		 	  | SystemOutPrintln LPar Expression RPar Semicolon StatementListOpt { System.out.println("\tStatement"); }
 			  | LCurlyB StatementListOpt RCurlyB StatementListOpt { System.out.println("\tStatement"); }
 			  ;
 
-NextVar: Ident Semicolon VarOrStatement { System.out.println("\tVarDeclaration"); }
+NextVar: Ident Semicolon VarOrStatement { 
+			TS_entry nodo = findInScope($1.sval, ClasseID.NomeParam);	
+			if (nodo == null)
+				nodo = findInScope($2.sval, ClasseID.VarLocal);	
+
+			if (nodo != null) {
+				yyerror("identifier " + $2.sval + " was already declared");
+				// TODO: error in the end
+			} else {
+				TS_entry classe = findInScope(varOrStatementIdent.sval, ClasseID.NomeClasse);
+				if (classe == null) {
+					yyerror("classe " + varOrStatementIdent.sval + " nao foi declarada");
+					// TODO: error in the end
+				} else {
+					TS_entry entry = new TS_entry($2.sval, classe,  ClasseID.VarLocal);
+					scopes.peek().symbols.insert(entry);
+					System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
+				}
+			}
+	   }
 	   | Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
 	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
 	   ;
@@ -271,6 +329,8 @@ private MiniJavaLexer lexer;
 private int current_token;
 private ClasseID currClass;
 private Stack<Scope> scopes;
+
+private ParserVal varOrStatementIdent;
 
 private int yylex () {
     int yyl_return = -1;
