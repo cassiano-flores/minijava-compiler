@@ -67,9 +67,10 @@ MainClass: Class Ident LCurlyB {
 			// identificadores jah existirem
 
 			System.out.println("Inserindo classe '" + $2.sval + "' em: " + printScopes());
-			scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
+			TS_entry node = new TS_entry($2.sval, null, ClasseID.NomeClasse);
+			scopes.peek().symbols.insert(node);
 			System.out.println("Empilhando escopo: " + $2.sval);
-			scopes.push(new Scope($2.sval));
+			scopes.push(new Scope($2.sval, node));
 		 } Public Static Void Main LPar String LSquareB RSquareB Ident RPar LCurlyB {
 			TS_entry entry = new TS_entry("main", Tp_VOID);
 			scopes.peek().symbols.insert(entry);
@@ -106,8 +107,9 @@ ClassDeclaration: Class Ident ExtendOpt LCurlyB {
 						System.out.println("Inserindo classe '" + $2.sval + "' em: " + printScopes());
 						scopes.peek().symbols.insert(new TS_entry($2.sval, null, ClasseID.NomeClasse));
 					}
+					nodo = new TS_entry($2.sval, null, ClasseID.NomeClasse);
 					System.out.println("Empilhando escopo: " + $2.sval);
-					scopes.push(new Scope($2.sval));
+					scopes.push(new Scope($2.sval, nodo));
 				}
 				FieldDeclListOpt MethodDeclListOpt RCurlyB {
 					System.out.println("Desempilhando escopo: " + scopes.pop().desc);
@@ -186,8 +188,8 @@ Arg: Type Ident {
    ;
 
 VarOrStatement: /*empty*/
-			  | Ident NextVar { varOrStatementIdent = $1; }
-			  | Int Ident Semicolon VarOrStatement { 
+			  | Ident { varOrStatementIdent = $1; } NextVar
+			  | Int Ident Semicolon { 
 			  		TS_entry nodo = findInScope($2.sval, ClasseID.NomeParam);	
 					if (nodo == null)
 						nodo = findInScope($2.sval, ClasseID.VarLocal);	
@@ -200,8 +202,8 @@ VarOrStatement: /*empty*/
 						scopes.peek().symbols.insert(entry);
 						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
 					}
-			  }
-			  | Int LSquareB RSquareB Ident Semicolon VarOrStatement { 
+			  } VarOrStatement
+			  | Int LSquareB RSquareB Ident Semicolon { 
 			  		TS_entry nodo = findInScope($4.sval, ClasseID.NomeParam);	
 					if (nodo == null)
 						nodo = findInScope($4.sval, ClasseID.VarLocal);	
@@ -214,8 +216,8 @@ VarOrStatement: /*empty*/
 						scopes.peek().symbols.insert(entry);
 						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
 					}
-			  }
-			  | Boolean Ident Semicolon VarOrStatement { 
+			  } VarOrStatement
+			  | Boolean Ident Semicolon { 
 			  		TS_entry nodo = findInScope($2.sval, ClasseID.NomeParam);	
 					if (nodo == null)
 						nodo = findInScope($2.sval, ClasseID.VarLocal);	
@@ -228,20 +230,20 @@ VarOrStatement: /*empty*/
 						scopes.peek().symbols.insert(entry);
 						System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
 					}
-			  }
+			  } VarOrStatement
 		 	  | If LPar Expression RPar Statement Else Statement StatementListOpt { System.out.println("\tStatement"); }
 		 	  | While LPar Expression RPar Statement StatementListOpt { System.out.println("\tStatement"); }
 		 	  | SystemOutPrintln LPar Expression RPar Semicolon StatementListOpt { System.out.println("\tStatement"); }
 			  | LCurlyB StatementListOpt RCurlyB StatementListOpt { System.out.println("\tStatement"); }
 			  ;
 
-NextVar: Ident Semicolon VarOrStatement { 
+NextVar: Ident Semicolon { 
 			TS_entry nodo = findInScope($1.sval, ClasseID.NomeParam);	
 			if (nodo == null)
-				nodo = findInScope($2.sval, ClasseID.VarLocal);	
+				nodo = findInScope($1.sval, ClasseID.VarLocal);	
 
 			if (nodo != null) {
-				yyerror("identifier " + $2.sval + " was already declared");
+				yyerror("identifier " + $1.sval + " was already declared");
 				// TODO: error in the end
 			} else {
 				TS_entry classe = findInScope(varOrStatementIdent.sval, ClasseID.NomeClasse);
@@ -249,13 +251,27 @@ NextVar: Ident Semicolon VarOrStatement {
 					yyerror("classe " + varOrStatementIdent.sval + " nao foi declarada");
 					// TODO: error in the end
 				} else {
-					TS_entry entry = new TS_entry($2.sval, classe,  ClasseID.VarLocal);
+					TS_entry entry = new TS_entry($1.sval, classe,  ClasseID.VarLocal);
 					scopes.peek().symbols.insert(entry);
 					System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
 				}
 			}
-	   }
-	   | Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
+	   } VarOrStatement
+	   | Equals Expression Semicolon {
+			//TS_entry nodo = findInScope(varOrStatementIdent.sval, ClasseID.NomeParam);	
+			//if (nodo == null)
+			//	nodo = findInScope(varOrStatementIdent.sval, ClasseID.VarLocal);	
+
+			//if (nodo == null) {
+			//	yyerror("identifier " + varOrStatementIdent.sval + " not found in scope!");
+			//	// TODO: error in the end
+			//} else if (!nodo.getTipoStr().equals(((TS_entry)$2.obj).getTipoStr())) {
+			//	yyerror("type mismatch! Identifier " + varOrStatementIdent.sval
+			//		+ " has type " + nodo.getTipoStr() + " but expression has type " + 
+			//		((TS_entry)$2.obj).getTipoStr());
+			//	// TODO: error in the end
+			//}
+	   } StatementListOpt
 	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt { System.out.println("\tStatement"); }
 	   ;
 
@@ -300,7 +316,10 @@ Expression: Expression And Expression { System.out.println("\tExpression"); }
 		  | True { System.out.println("\tExpression"); }
 		  | False { System.out.println("\tExpression"); }
 		  | Ident { System.out.println("\tExpression"); }
-		  | This { System.out.println("\tExpression"); }
+		  | This {
+			  $$ = new ParserVal(nearestClass());
+			  System.out.println("this has type: " + nearestClass());
+		  }
 		  | New Int LSquareB Expression RSquareB { System.out.println("\tExpression"); }
 		  | New Ident LPar RPar { System.out.println("\tExpression"); }
 		  | Exclamation Expression { System.out.println("\tExpression"); }
@@ -337,7 +356,7 @@ private int yylex () {
     try {
       yyl_return = lexer.yylex();
 	  current_token = yyl_return;
-	  System.out.println(intToTokenStr(current_token));
+	  //System.out.println(intToTokenStr(current_token));
     } catch (IOException e) {
       System.err.println("IO error :"+e);
     }
@@ -415,7 +434,26 @@ private TS_entry findInScope(String ident, ClasseID classId) {
 		return null;
 	
 	return s.symbols.pesquisa(ident);
-  }
+}
+
+private TS_entry nearestClass() {
+	Stack<Scope> aux = new Stack<Scope>();
+	TS_entry ret = null;
+	while (!scopes.peek().desc.equals("TopLevel")) {
+		Scope s = scopes.pop();
+		aux.push(s);
+
+		if (s.classe != null) {
+			ret = s.classe;
+			break;
+		}
+	}
+
+	while (!aux.empty())
+		scopes.push(aux.pop());
+
+	return ret;
+}
 
 public Parser(Reader r) {
 	lexer = new MiniJavaLexer(r, this);
