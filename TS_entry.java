@@ -89,4 +89,11 @@ public class TS_entry {
 	  }
 	}
   }
+
+  public boolean equals(TS_entry other) {
+	  if (this.tipo != null)
+		  return this.id.equals(other.id) && this.tipo.equals(other.tipo) && this.classe == other.classe;
+	  else 
+		  return this.id.equals(other.id) && other.tipo == null && this.classe == other.classe;
+  }
 }
