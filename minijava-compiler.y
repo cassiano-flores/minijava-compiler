@@ -397,7 +397,7 @@ Expression: Expression And Expression {
 				else
 					$$ = new ParserVal(Tp_ERRO);
 		  }
-		  | Expression Dot Ident LPar ExpressionListOpt RPar {
+		  | Expression Dot Ident LPar {
 				TS_entry entry = ((TS_entry)$1.obj);
 				if (entry.getClasse() != ClasseID.NomeClasse) {
 					yyerror("type mismatch! Expected a class, found: " + ((TS_entry)$1.obj).getTipoStr());
@@ -414,13 +414,15 @@ Expression: Expression And Expression {
 					if (found == null) {
 						yyerror("method " + $3.sval + " does not exist for class " + entry.getId());
 						$$ = new ParserVal(Tp_ERRO);
-					} else {
-						// TODO: type check paramenters
-						$$ = new ParserVal(found.returnType);
 					}
+					// we use this to type check the paramenters
+					methodCall = found;
+					methodCallParam = found == null ? 0 : found.params_or_functions.size() - 1;
 				}
-
-			}
+		  } ExpressionListOpt RPar {
+		  	if (methodCall != null)
+				$$ = new ParserVal(methodCall.returnType);
+		  }
 		  | IntegerLiteral { $$ = new ParserVal(Tp_INT); }
 		  | True { $$ = new ParserVal(Tp_BOOL); }
 		  | False {  $$ = new ParserVal(Tp_BOOL); }
@@ -470,8 +472,18 @@ ExpressionListOpt: /*empty*/
 			  | ExpressionList
 			  ;
 
-ExpressionList: Expression
-			  | ExpressionList Comma Expression
+ExpressionList: Expression {
+				if (methodCall != null) {
+					typeCheck((TS_entry)$1.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
+					methodCallParam -= 1;
+				}
+			  }
+			  | ExpressionList Comma Expression {
+				if (methodCall != null) {
+					typeCheck((TS_entry)$3.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
+					methodCallParam -= 1;
+				}
+			  }
 			  ;
 %%
 
@@ -491,6 +503,9 @@ private Stack<Scope> scopes;
 
 private ParserVal varOrStatementIdent;
 private TS_entry curMethod;
+
+private TS_entry methodCall;
+private int methodCallParam;
 
 private int nErrors = 0;
 
@@ -605,7 +620,7 @@ private TS_entry nearestClass() {
 
 private boolean typeCheck(TS_entry actual, TS_entry expected) {
 	if (!actual.equals(expected)) {
-		yyerror("type mismatch! Expected" + expected.getTipoStr() + ", found: " + actual.getTipoStr());
+		yyerror("type mismatch! Expected " + expected.getTipoStr() + ", found: " + actual.getTipoStr());
 		return false;
 	}
 	return true;
