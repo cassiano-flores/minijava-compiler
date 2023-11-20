@@ -418,11 +418,12 @@ Expression: Expression And Expression {
 						defferedTypes.addFunctionToClass(entry, found, lexer.line());
 					}
 					// we use this to type check the paramenters
-					methodCall = found;
-					methodCallParam = found == null ? 0 : found.params_or_functions.size() - 1;
+					methodCall.push(found);
+					methodCallParam.push(0);
 				}
 		  } ExpressionListOpt RPar {
-			$$ = new ParserVal(methodCall.returnType);
+			methodCallParam.pop();
+			$$ = new ParserVal(methodCall.pop().returnType);
 		  }
 		  | IntegerLiteral { $$ = new ParserVal(Tp_INT); }
 		  | True { $$ = new ParserVal(Tp_BOOL); }
@@ -473,19 +474,19 @@ ExpressionListOpt: /*empty*/
 			  ;
 
 ExpressionList: Expression {
-				if (!methodCall.returnType.equals(Tp_ANY)) {
-					typeCheck((TS_entry)$1.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
-					methodCallParam -= 1;
+				if (!methodCall.peek().returnType.equals(Tp_ANY)) {
+					typeCheck((TS_entry)$1.obj, methodCall.peek().params_or_functions.get(methodCallParam.peek()).getTipo());
+					methodCallParam.push(methodCallParam.pop() + 1);
 				} else {
-					methodCall.params_or_functions.add((TS_entry)$1.obj);
+					methodCall.peek().params_or_functions.add((TS_entry)$1.obj);
 				}
 			  }
 			  | ExpressionList Comma Expression {
-				if (!methodCall.returnType.equals(Tp_ANY)) {
-					typeCheck((TS_entry)$3.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
-					methodCallParam -= 1;
+				if (!methodCall.peek().returnType.equals(Tp_ANY)) {
+					typeCheck((TS_entry)$3.obj, methodCall.peek().params_or_functions.get(methodCallParam.peek()).getTipo());
+					methodCallParam.push(methodCallParam.pop() + 1);
 				} else {
-					methodCall.params_or_functions.add((TS_entry)$3.obj);
+					methodCall.peek().params_or_functions.add((TS_entry)$3.obj);
 				}
 			  }
 			  ;
@@ -511,8 +512,8 @@ private Stack<Scope> scopes;
 private ParserVal varOrStatementIdent;
 private TS_entry curMethod;
 
-private TS_entry methodCall;
-private int methodCallParam;
+private Stack<TS_entry> methodCall = new Stack<>();
+private Stack<Integer> methodCallParam = new Stack<>();
 
 private int nErrors = 0;
 
