@@ -41,14 +41,17 @@ public class DefferedTypes {
 	
 	
 	public void addClass(TS_entry c, int line) {
+		System.out.println("Assuming existance of class " + c.getId() + " at line " + line);
 	    this.classes.add(new Class(c, line));
 	}
 	
 	public void addFunction(TS_entry function, int line) {
+		System.out.println("Assuming existance of method " + function.getId() + " at line " + line);
 	    this.functions.add(new Function(function, line));
 	}
 
 	public void addFunctionToClass(TS_entry c, TS_entry function, int line) {
+		System.out.println("Assuming existance of method " + function.getId() + " in class " + c.getId() + " at line " + line);
 	    boolean found = false;
 	    for (int i = 0; i < this.classes.size(); ++i) {
 	  	  if (this.classes.get(i).self.getId().equals(c.getId())) {
