@@ -257,7 +257,7 @@ NextVar: Ident Semicolon {
 			} else {
 				TS_entry classe = findInScope(varOrStatementIdent.sval, ClasseID.NomeClasse);
 				if (classe == null) {
-					yyerror("classe " + varOrStatementIdent.sval + " nao foi declarada");
+					yyerror("class " + varOrStatementIdent.sval + " was not declared");
 				} else {
 					TS_entry entry = new TS_entry($1.sval, classe,  ClasseID.VarLocal);
 					scopes.peek().symbols.insert(entry);
@@ -508,6 +508,8 @@ private TS_entry methodCall;
 private int methodCallParam;
 
 private int nErrors = 0;
+
+private DefferedTypes defferedTypes = new DefferedTypes();
 
 private int yylex () {
     int yyl_return = -1;
