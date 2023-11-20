@@ -60,6 +60,8 @@ import java.util.stream.Collectors;
 %%
 
 Goal : MainClass ClassDeclListOpt {
+		 verifyDefferedClasses(); // check all functions that were used before being declared
+
 		 if (nErrors > 0) {
 		 	System.err.println("\n    !!!COMPILATION FAILED WITH " + nErrors + " ERRORS!!!");
 		 } else {
@@ -257,12 +259,12 @@ NextVar: Ident Semicolon {
 			} else {
 				TS_entry classe = findInScope(varOrStatementIdent.sval, ClasseID.NomeClasse);
 				if (classe == null) {
-					yyerror("class " + varOrStatementIdent.sval + " was not declared");
-				} else {
-					TS_entry entry = new TS_entry($1.sval, classe,  ClasseID.VarLocal);
-					scopes.peek().symbols.insert(entry);
-					System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
+					classe = new TS_entry(varOrStatementIdent.sval, null, ClasseID.NomeClasse);
+					defferedTypes.addClass(classe, lexer.line());
 				}
+				TS_entry entry = new TS_entry($1.sval, classe,  ClasseID.VarLocal);
+				scopes.peek().symbols.insert(entry);
+				System.out.println("Inserindo variavel local '" + entry + "' em: " + printScopes());
 			}
 	   } VarOrStatement
 	   | Equals Expression Semicolon {
@@ -307,11 +309,10 @@ Type: Int { $$ = new ParserVal(Tp_INT); }
 	| Ident {
 		TS_entry nodo = findInScope($1.sval, ClasseID.NomeClasse);
 		if (nodo == null) {
-			yyerror("class " + $1.sval + " was not declared");
-			$$ = new ParserVal(Tp_ERRO);
-		} else {
-			$$ = new ParserVal(nodo);
+			nodo = new TS_entry($1.sval, null, ClasseID.NomeClasse);
+			defferedTypes.addClass(nodo, lexer.line());
 		}
+		$$ = new ParserVal(nodo);
 	}
 	;
 
@@ -412,16 +413,16 @@ Expression: Expression And Expression {
 					}
 
 					if (found == null) {
-						yyerror("method " + $3.sval + " does not exist for class " + entry.getId());
-						$$ = new ParserVal(Tp_ERRO);
+						// TODO: parameters
+						found = new TS_entry($3.sval, Tp_ANY);
+						defferedTypes.addFunctionToClass(entry, found, lexer.line());
 					}
 					// we use this to type check the paramenters
 					methodCall = found;
 					methodCallParam = found == null ? 0 : found.params_or_functions.size() - 1;
 				}
 		  } ExpressionListOpt RPar {
-		  	if (methodCall != null)
-				$$ = new ParserVal(methodCall.returnType);
+			$$ = new ParserVal(methodCall.returnType);
 		  }
 		  | IntegerLiteral { $$ = new ParserVal(Tp_INT); }
 		  | True { $$ = new ParserVal(Tp_BOOL); }
@@ -453,11 +454,10 @@ Expression: Expression And Expression {
 		  | New Ident LPar RPar {
 				TS_entry nodo = findInScope($2.sval, ClasseID.NomeClasse);
 				if (nodo == null) {
-					yyerror("class " + $2.sval + " was not declared");
-					$$ = new ParserVal(Tp_ERRO);
-				} else {
-					$$ = new ParserVal(nodo);
+					nodo = new TS_entry($2.sval, null, ClasseID.NomeClasse);
+					defferedTypes.addClass(nodo, lexer.line());
 				}
+				$$ = new ParserVal(nodo);
 			}
 		  | Exclamation Expression {
 		  		if (typeCheck((TS_entry)$2.obj, Tp_BOOL))
@@ -473,15 +473,19 @@ ExpressionListOpt: /*empty*/
 			  ;
 
 ExpressionList: Expression {
-				if (methodCall != null) {
+				if (!methodCall.returnType.equals(Tp_ANY)) {
 					typeCheck((TS_entry)$1.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
 					methodCallParam -= 1;
+				} else {
+					methodCall.params_or_functions.add((TS_entry)$1.obj);
 				}
 			  }
 			  | ExpressionList Comma Expression {
-				if (methodCall != null) {
+				if (!methodCall.returnType.equals(Tp_ANY)) {
 					typeCheck((TS_entry)$3.obj, methodCall.params_or_functions.get(methodCallParam).getTipo());
 					methodCallParam -= 1;
+				} else {
+					methodCall.params_or_functions.add((TS_entry)$3.obj);
 				}
 			  }
 			  ;
@@ -491,6 +495,9 @@ public static TS_entry Tp_INT =  new TS_entry("int", null, ClasseID.TipoBase);
 public static TS_entry Tp_ARRAY =  new TS_entry("array", null, ClasseID.TipoBase);
 public static TS_entry Tp_BOOL = new TS_entry("bool", null,  ClasseID.TipoBase);
 public static TS_entry Tp_ERRO = new TS_entry("_erro_", null,  ClasseID.TipoBase);
+
+// "ANY" é usado APENAS quando retornamos de funcoes ainda nao declaradas
+public static TS_entry Tp_ANY = new TS_entry("ANY", null,  ClasseID.TipoBase);
 
 // apenas para a main
 // note que 'void' nao eh um tipo base; ninguem pode ser void, exceto a main()
@@ -598,6 +605,24 @@ private TS_entry findInScope(String ident, ClasseID classId) {
 	while (!aux.empty())
 		scopes.push(aux.pop());
 
+	if (ret == null && classId == ClasseID.NomeClasse) {
+		ArrayList<DefferedTypes.Class> classes = defferedTypes.getClasses();
+		for (int i = 0; i < classes.size(); ++i) {
+			if (classes.get(i).self.getId().equals(ident)) {
+				ret = classes.get(i).self;
+				break;
+			}
+		}
+	} else if (ret == null && classId == ClasseID.NomeFuncao) {
+		ArrayList<DefferedTypes.Function> functions = defferedTypes.getFunctions();
+		for (int i = 0; i < functions.size(); ++i) {
+			if (functions.get(i).self.getId().equals(ident)) {
+				ret = functions.get(i).self;
+				break;
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -621,11 +646,72 @@ private TS_entry nearestClass() {
 }
 
 private boolean typeCheck(TS_entry actual, TS_entry expected) {
+	if (actual.equals(Tp_ANY)) {
+		actual = expected;
+		return true;
+	}
+
 	if (!actual.equals(expected)) {
 		yyerror("type mismatch! Expected " + expected.getTipoStr() + ", found: " + actual.getTipoStr());
 		return false;
 	}
+
 	return true;
+}
+
+private void defferedError(String error, int line) {
+	System.err.println("ERROR: " + error + ", at line: " + line);
+	++nErrors;
+}
+
+private void verifyDefferedClasses() {
+	ArrayList<DefferedTypes.Class> classes = defferedTypes.getClasses();
+	for (int i = 0; i < classes.size(); ++i) {
+		DefferedTypes.Class expected = classes.get(i);
+
+		TS_entry actual = findInScope(expected.self.getId(), ClasseID.NomeClasse);
+		if (actual == null) {
+			defferedError("class " + expected.self.getId() + " was never declared", expected.line);
+		} else {
+			verifyDefferedFunctions(expected.functions, actual);
+		}
+	}
+}
+
+private void verifyDefferedFunctions(ArrayList<DefferedTypes.Function> functions, TS_entry classe) {
+	for (int i = 0; i < functions.size(); ++i) {
+		DefferedTypes.Function expected = functions.get(i);
+		
+		TS_entry actual = null;
+		for (int j = 0; j < classe.params_or_functions.size(); ++ j) {
+			if (classe.params_or_functions.get(j).getId().equals(expected.self.getId())) {
+				actual = classe.params_or_functions.get(j);
+				break;
+			}
+		}
+
+		if (actual == null) {
+			defferedError("function " + expected.self.getId() + " for class " + classe.getId() + " was never declared", expected.line);
+		} else {
+			boolean correct_params = expected.self.params_or_functions.size() == actual.params_or_functions.size();
+			if (correct_params) {
+				for (int k = 0; k < actual.params_or_functions.size(); ++k) {
+					correct_params = expected.self.params_or_functions.get(k).equals(actual.params_or_functions.get(k).getTipo());
+				}
+			}
+
+			if (!correct_params) {
+				String s = "function " + expected.self.getId() + " for class " + classe.getId() + " was expected to have parameters '";
+				for (int k = 0; k < expected.self.params_or_functions.size(); ++k)
+					s += expected.self.params_or_functions.get(k).getId() + " ";
+				s += "', but it has '";
+				for (int k = 0; k < actual.params_or_functions.size(); ++k)
+					s += actual.params_or_functions.get(k).getId() + " ";
+				s += "'";
+				defferedError(s, expected.line);
+			}
+		}
+	}
 }
 
 public Parser(Reader r) {

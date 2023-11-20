@@ -27,12 +27,18 @@ public class DefferedTypes {
 	  	  this.line = line;
 	    }
 	}
-	
+
 	// All classes used before they were declared
 	private ArrayList<Class> classes;
 	
 	// Functions used before they were declared IN CURRENT SCOPE
 	private ArrayList<Function> functions;
+
+	public DefferedTypes() {
+		this.classes = new ArrayList<Class>();
+		this.functions = new ArrayList<Function>();
+	}
+	
 	
 	public void addClass(TS_entry c, int line) {
 	    this.classes.add(new Class(c, line));
