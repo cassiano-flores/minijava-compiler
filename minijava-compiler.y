@@ -4,6 +4,10 @@ import java.io.*;
 import java.util.stream.Collectors;
 %}
 
+// IMPORTANTE: para testar os erros, redirecione stdout:
+// `java Parser <programa> > /dev/null`
+// isso vai redirecionar todo o output regular para o "lixo". Os erros são todos impressos para stderr
+
 // All terminals:
 %token Void
 %token Main
