@@ -75,6 +75,8 @@ public class TS_entry {
 			return "null";
 	} else if (tipo == Parser.Tp_INT)
       return "int";
+	else if (tipo == Parser.Tp_ARRAY)
+		return "array";
     else if (tipo == Parser.Tp_BOOL)
       return "boolean";
     else if (tipo == Parser.Tp_ERRO)

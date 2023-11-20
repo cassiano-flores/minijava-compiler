@@ -277,7 +277,7 @@ NextVar: Ident Semicolon {
 			if (nodo == null) {
 				yyerror("identifier " + varOrStatementIdent.sval + " not found in scope!");
 			} else {
-				typeCheck(nodo.getTipo(), (TS_entry)$2.obj);
+				typeCheck((TS_entry)$2.obj, nodo.getTipo());
 			}
 	   } StatementListOpt
 	   | LSquareB Expression RSquareB Equals Expression Semicolon StatementListOpt {
@@ -337,7 +337,7 @@ Statement: LCurlyB StatementListOpt RCurlyB
 			if (nodo == null) {
 				yyerror("identifier " + $1.sval + " not found in scope!");
 			} else {
-				typeCheck(nodo.getTipo(), (TS_entry)$3.obj);
+				typeCheck((TS_entry)$3.obj, nodo.getTipo());
 			}
 		 }
 		 | Ident LSquareB Expression RSquareB Equals Expression Semicolon {
